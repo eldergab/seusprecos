@@ -4,24 +4,78 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Seus Preços - Compare preços</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <script src="scripts/github-api.js"></script>
+  <style>
+    /* Estilos globais simplificados */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2e7d32;
+      text-align: center;
+    }
+    input, select {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .product-card {
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    /* Ícones Unicode */
+    .search-icon::before { content: "🔍"; margin-right: 5px; }
+    .box-icon::before { content: "📦"; margin-right: 5px; }
+    .warning-icon::before { content: "⚠️"; margin-right: 5px; }
+  </style>
+  <script>
+    // Dados inline
+    const productsData = {
+      products: [
+        {id: "prod1", name: "Arroz 5kg", category: "Alimentos", price: 25.90, merchant: "merc1"},
+        {id: "prod2", name: "Feijão 1kg", category: "Alimentos", price: 8.50, merchant: "merc1"},
+        {id: "prod3", name: "Óleo de Soja 900ml", category: "Alimentos", price: 7.80, merchant: "merc2"}
+      ]
+    };
+
+    const merchantsData = {
+      merchants: [
+        {id: "merc1", name: "Mercado do João", location: "Centro", rating: 4.5},
+        {id: "merc2", name: "Supermercado Bom Preço", location: "Vila Nova", rating: 4.2}
+      ],
+      last_id: 2
+    };
+  </script>
 </head>
-<body class="bg-gray-100">
-  <div class="container mx-auto px-4 py-8">
-    <header class="mb-8 text-center">
-      <h1 class="text-4xl font-bold text-blue-800">Seus Preços</h1>
-      <p class="text-xl text-gray-600">Compare preços de produtos</p>
+<body style="background-color: #f3f4f6; margin: 0; padding: 0;">
+  <div style="max-width: 1200px; margin: 0 auto; padding: 1rem 2rem;">
+    <header style="margin-bottom: 2rem; text-align: center;">
+      <h1 style="font-size: 2.5rem; font-weight: bold; color: #1e40af;">Seus Preços</h1>
+      <p style="font-size: 1.25rem; color: #4b5563;">Compare preços de produtos</p>
     </header>
 
-    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow">
+    <div style="max-width: 42rem; margin: 0 auto; background: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
       <!-- Barra de Busca -->
       <div class="mb-6">
         <div class="relative">
-          <input type="text" id="searchInput" placeholder="Buscar produtos..."
-                 class="w-full px-4 py-3 border rounded-lg pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <i class="fas fa-search absolute left-3 top-4 text-gray-400"></i>
+          <div style="position: relative;">
+            <span class="search-icon" style="position: absolute; left: 10px; top: 10px;"></span>
+            <input type="text" id="searchInput" placeholder="Buscar produtos..." 
+                   style="padding: 8px 8px 8px 30px; width: 100%; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
         </div>
       </div>
 
@@ -40,9 +94,9 @@
       </div>
 
       <!-- Resultados -->
-      <div id="results" class="space-y-4">
-        <div class="text-center py-8 text-gray-500">
-          <i class="fas fa-search fa-2x mb-2"></i>
+      <div id="results" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div style="text-align: center; padding: 2rem; color: #666;">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
           <p>Busque produtos para comparar preços</p>
         </div>
       </div>
@@ -59,13 +113,17 @@
       // Carregar localizações
       async function loadLocations() {
         try {
-          const store = new GitHubDataStore({
-            token: '', // Sem token necessário para leitura
-            owner: 'seu_usuario',
-            repo: 'seusprecos-data'
-          });
+          const dataStore = {
+            getProducts: async () => productsData,
+            getMerchants: async () => merchantsData,
+            addMerchant: async (merchant) => {
+              merchant.id = `merc${++merchantsData.last_id}`;
+              merchantsData.merchants.push(merchant);
+              return { status: 'success' };
+            }
+          };
           
-          const merchants = await store.getMerchants();
+          const merchants = await dataStore.getMerchants();
           const locations = [...new Set(merchants.merchants.map(m => m.location))];
           
           locationFilter.innerHTML = '<option value="">Todas localizações</option>';
@@ -83,16 +141,15 @@
       // Carregar e exibir produtos
       async function loadProducts(searchTerm = '', category = '', location = '') {
         try {
-          const store = new GitHubDataStore({
-            token: '', // Sem token necessário para leitura
-            owner: 'seu_usuario',
-            repo: 'seusprecos-data'
-          });
+          const store = new LocalDataStore();
           
+          console.log('Iniciando loadProducts');
           const [products, merchants] = await Promise.all([
-            store.getProducts(),
-            store.getMerchants()
+            dataStore.getProducts(),
+            dataStore.getMerchants()
           ]);
+          console.log('Produtos carregados:', products);
+          console.log('Comerciantes carregados:', merchants);
           
           results.innerHTML = '';
           
@@ -104,8 +161,8 @@
           
           if (filteredProducts.length === 0) {
             results.innerHTML = `
-              <div class="text-center py-8 text-gray-500">
-                <i class="fas fa-box-open fa-2x mb-2"></i>
+              <div style="text-align: center; padding: 2rem; color: #666;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📦</div>
                 <p>Nenhum produto encontrado</p>
               </div>
             `;
@@ -155,8 +212,8 @@
         } catch (error) {
           console.error('Erro ao carregar produtos:', error);
           results.innerHTML = `
-            <div class="text-center py-8 text-red-500">
-              <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+            <div style="text-align: center; padding: 2rem; color: #d32f2f;">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚠️</div>
               <p>Erro ao carregar dados. Tente novamente mais tarde.</p>
             </div>
           `;
