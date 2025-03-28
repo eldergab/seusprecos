@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seus Preços - Compare preços</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="scripts/github-api.js"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="container mx-auto px-4 py-8">
+    <header class="mb-8 text-center">
+      <h1 class="text-4xl font-bold text-blue-800">Seus Preços</h1>
+      <p class="text-xl text-gray-600">Compare preços de produtos</p>
+    </header>
+
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow">
+      <!-- Barra de Busca -->
+      <div class="mb-6">
+        <div class="relative">
+          <input type="text" id="searchInput" placeholder="Buscar produtos..."
+                 class="w-full px-4 py-3 border rounded-lg pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <i class="fas fa-search absolute left-3 top-4 text-gray-400"></i>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="flex flex-wrap gap-4 mb-6">
+        <select id="categoryFilter" class="px-4 py-2 border rounded-lg">
+          <option value="">Todas categorias</option>
+          <option value="Alimentos">Alimentos</option>
+          <option value="Bebidas">Bebidas</option>
+          <option value="Limpeza">Limpeza</option>
+        </select>
+        
+        <select id="locationFilter" class="px-4 py-2 border rounded-lg">
+          <option value="">Todas localizações</option>
+        </select>
+      </div>
+
+      <!-- Resultados -->
+      <div id="results" class="space-y-4">
+        <div class="text-center py-8 text-gray-500">
+          <i class="fas fa-search fa-2x mb-2"></i>
+          <p>Busque produtos para comparar preços</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const searchInput = document.getElementById('searchInput');
+      const categoryFilter = document.getElementById('categoryFilter');
+      const locationFilter = document.getElementById('locationFilter');
+      const results = document.getElementById('results');
+      
+      // Carregar localizações
+      async function loadLocations() {
+        try {
+          const store = new GitHubDataStore({
+            token: '', // Sem token necessário para leitura
+            owner: 'seu_usuario',
+            repo: 'seusprecos-data'
+          });
+          
+          const merchants = await store.getMerchants();
+          const locations = [...new Set(merchants.merchants.map(m => m.location))];
+          
+          locationFilter.innerHTML = '<option value="">Todas localizações</option>';
+          locations.forEach(location => {
+            const option = document.createElement('option');
+            option.value = location;
+            option.textContent = location;
+            locationFilter.appendChild(option);
+          });
+        } catch (error) {
+          console.error('Erro ao carregar localizações:', error);
+        }
+      }
+      
+      // Carregar e exibir produtos
+      async function loadProducts(searchTerm = '', category = '', location = '') {
+        try {
+          const store = new GitHubDataStore({
+            token: '', // Sem token necessário para leitura
+            owner: 'seu_usuario',
+            repo: 'seusprecos-data'
+          });
+          
+          const [products, merchants] = await Promise.all([
+            store.getProducts(),
+            store.getMerchants()
+          ]);
+          
+          results.innerHTML = '';
+          
+          const filteredProducts = products.products.filter(product => {
+            const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesCategory = !category || product.category === category;
+            return matchesSearch && matchesCategory;
+          });
+          
+          if (filteredProducts.length === 0) {
+            results.innerHTML = `
+              <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-box-open fa-2x mb-2"></i>
+                <p>Nenhum produto encontrado</p>
+              </div>
+            `;
+            return;
+          }
+          
+          filteredProducts.forEach(product => {
+            const productCard = document.createElement('div');
+            productCard.className = 'bg-white p-4 rounded-lg border';
+            
+            let merchantsWithPrices = [];
+            for (const [merchantId, price] of Object.entries(product.prices || {})) {
+              const merchant = merchants.merchants.find(m => m.id === merchantId);
+              if (merchant && (!location || merchant.location === location)) {
+                merchantsWithPrices.push({
+                  name: merchant.name,
+                  location: merchant.location,
+                  price: price
+                });
+              }
+            }
+            
+            merchantsWithPrices.sort((a, b) => a.price - b.price);
+            
+            productCard.innerHTML = `
+              <h3 class="text-lg font-semibold mb-2">${product.name}</h3>
+              ${product.category ? `<span class="text-sm text-gray-500">${product.category}</span>` : ''}
+              
+              <div class="mt-4">
+                ${merchantsWithPrices.length > 0 ? 
+                  merchantsWithPrices.map(merchant => `
+                    <div class="flex justify-between py-2 border-b">
+                      <div>
+                        <span class="font-medium">${merchant.name}</span>
+                        <span class="text-sm text-gray-500 ml-2">${merchant.location}</span>
+                      </div>
+                      <span class="font-bold">R$ ${merchant.price.toFixed(2)}</span>
+                    </div>
+                  `).join('') : 
+                  '<p class="text-gray-500 py-2">Nenhum preço disponível</p>'
+                }
+              </div>
+            `;
+            
+            results.appendChild(productCard);
+          });
+        } catch (error) {
+          console.error('Erro ao carregar produtos:', error);
+          results.innerHTML = `
+            <div class="text-center py-8 text-red-500">
+              <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+              <p>Erro ao carregar dados. Tente novamente mais tarde.</p>
+            </div>
+          `;
+        }
+      }
+      
+      // Event listeners
+      searchInput.addEventListener('input', (e) => {
+        loadProducts(e.target.value, categoryFilter.value, locationFilter.value);
+      });
+      
+      categoryFilter.addEventListener('change', (e) => {
+        loadProducts(searchInput.value, e.target.value, locationFilter.value);
+      });
+      
+      locationFilter.addEventListener('change', (e) => {
+        loadProducts(searchInput.value, categoryFilter.value, e.target.value);
+      });
+      
+      // Inicialização
+      loadLocations();
+    });
+  </script>
+</body>
+</html>

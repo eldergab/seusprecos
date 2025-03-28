@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Usuários</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Lista de Usuários Cadastrados</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaUsuarios"></tbody>
+    </table>
+
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyC6kiIwpDcOYRiDp0CkbjWeRuFI_2axw4E",
+    authDomain: "cooperativa-affe.firebaseapp.com",
+    projectId: "cooperativa-affe",
+    storageBucket: "cooperativa-affe.firebasestorage.app",
+    messagingSenderId: "1013280029764",
+    appId: "1:1013280029764:web:b9554e13f0a9d633b01011",
+    measurementId: "G-W00JRTXYMV"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>= getFirestore(app);
+</script>
+</body>
+</html>

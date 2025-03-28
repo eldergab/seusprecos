@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seus Preços - Área do Comerciante</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="scripts/github-api.js"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="container mx-auto px-4 py-8">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold text-blue-800">Seus Preços</h1>
+      <p class="text-gray-600">Área do Comerciante</p>
+    </header>
+
+    <div class="grid md:grid-cols-2 gap-8">
+      <!-- Seção de Cadastro -->
+      <div class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-semibold mb-4">Cadastre seu comércio</h2>
+        <form id="merchantForm" class="space-y-4">
+          <div>
+            <label class="block text-gray-700">Nome do Estabelecimento</label>
+            <input type="text" id="merchantName" required 
+                   class="w-full px-4 py-2 border rounded-lg">
+          </div>
+          <div>
+            <label class="block text-gray-700">Localização</label>
+            <input type="text" id="merchantLocation" required
+                   class="w-full px-4 py-2 border rounded-lg">
+          </div>
+          <div>
+            <label class="block text-gray-700">Token GitHub</label>
+            <input type="password" id="githubToken" required
+                   class="w-full px-4 py-2 border rounded-lg"
+                   placeholder="Seu token de acesso pessoal do GitHub">
+          </div>
+          <button type="submit" 
+                  class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+            Cadastrar
+          </button>
+        </form>
+      </div>
+
+      <!-- Seção de Produtos -->
+      <div class="bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-semibold mb-4">Seus Produtos</h2>
+        <div id="productSection" class="hidden">
+          <form id="productForm" class="mb-6 space-y-4">
+            <div>
+              <label class="block text-gray-700">Adicionar/Atualizar Produto</label>
+              <input type="text" id="productName" placeholder="Nome do produto" required
+                     class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            <div>
+              <label class="block text-gray-700">Preço (R$)</label>
+              <input type="number" step="0.01" id="productPrice" required
+                     class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            <button type="submit"
+                    class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+              Salvar Produto
+            </button>
+          </form>
+          <div id="productList" class="border-t pt-4">
+            <!-- Lista de produtos será carregada aqui -->
+          </div>
+        </div>
+        <div id="loginFirst" class="text-center py-8 text-gray-500">
+          Faça login para gerenciar seus produtos
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const merchantForm = document.getElementById('merchantForm');
+      const productForm = document.getElementById('productForm');
+      const productSection = document.getElementById('productSection');
+      const loginFirst = document.getElementById('loginFirst');
+      const productList = document.getElementById('productList');
+      
+      let currentMerchant = null;
+      let githubStore = null;
+
+      // Cadastro de comerciante
+      merchantForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('merchantName').value;
+        const location = document.getElementById('merchantLocation').value;
+        const token = document.getElementById('githubToken').value;
+        
+        githubStore = new GitHubDataStore({
+          token: token,
+          owner: 'seu_usuario',  // Substituir pelo seu usuário GitHub
+          repo: 'seusprecos-data'
+        });
+
+        try {
+          const merchant = {
+            name: name,
+            location: location,
+            registeredAt: new Date().toISOString()
+          };
+
+          const result = await githubStore.addMerchant(merchant);
+          currentMerchant = merchant;
+          currentMerchant.id = `merc${(await githubStore.getMerchants()).last_id}`;
+          
+          alert('Cadastro realizado com sucesso!');
+          productSection.classList.remove('hidden');
+          loginFirst.classList.add('hidden');
+          loadProducts();
+        } catch (error) {
+          console.error(error);
+          alert('Erro ao cadastrar. Verifique seu token e tente novamente.');
+        }
+      });
+
+      // Carregar produtos
+      async function loadProducts() {
+        if (!githubStore || !currentMerchant) return;
+        
+        try {
+          const products = await githubStore.getProducts();
+          productList.innerHTML = '';
+          
+          if (products.products.length === 0) {
+            productList.innerHTML = '<p class="text-gray-500">Nenhum produto cadastrado ainda</p>';
+            return;
+          }
+
+          const merchantProducts = products.products.filter(p => 
+            p.prices && p.prices[currentMerchant.id] !== undefined
+          );
+
+          merchantProducts.forEach(product => {
+            const productItem = document.createElement('div');
+            productItem.className = 'flex justify-between items-center py-2 border-b';
+            productItem.innerHTML = `
+              <span>${product.name}</span>
+              <div>
+                <span class="font-bold">R$ ${product.prices[currentMerchant.id].toFixed(2)}</span>
+                <button data-id="${product.id}" class="ml-2 text-red-600 hover:text-red-800">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            `;
+            productList.appendChild(productItem);
+          });
+        } catch (error) {
+          console.error(error);
+          alert('Erro ao carregar produtos');
+        }
+      }
+
+      // Adicionar/Atualizar produto
+      productForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('productName').value;
+        const price = parseFloat(document.getElementById('productPrice').value);
+        
+        try {
+          const products = await githubStore.getProducts();
+          let product = products.products.find(p => p.name.toLowerCase() === name.toLowerCase());
+          
+          if (!product) {
+            product = {
+              id: 'prod' + Date.now(),
+              name: name,
+              category: 'Geral',
+              prices: {}
+            };
+            products.products.push(product);
+          }
+          
+          product.prices[currentMerchant.id] = price;
+          await githubStore.updateProducts({products: products.products});
+          
+          document.getElementById('productName').value = '';
+          document.getElementById('productPrice').value = '';
+          loadProducts();
+          alert('Produto salvo com sucesso!');
+        } catch (error) {
+          console.error(error);
+          alert('Erro ao salvar produto: ' + error.message);
+        }
+      });
+
+      // Delegar evento de clique para botões de remoção
+      productList.addEventListener('click', async (e) => {
+        if (e.target.closest('button') && confirm('Remover este produto?')) {
+          const productId = e.target.closest('button').dataset.id;
+          try {
+            const products = await githubStore.getProducts();
+            const updatedProducts = products.products.map(p => {
+              if (p.id === productId) {
+                delete p.prices[currentMerchant.id];
+              }
+              return p;
+            });
+            await githubStore.updateProducts({ products: updatedProducts });
+            loadProducts();
+          } catch (error) {
+            console.error(error);
+            alert('Erro ao remover produto');
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
