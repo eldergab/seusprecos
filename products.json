@@ -1,0 +1,25 @@
+{
+  "products": [
+    {
+      "id": "prod1",
+      "name": "Arroz 5kg",
+      "category": "Alimentos",
+      "price": 25.90,
+      "merchant": "merc1"
+    },
+    {
+      "id": "prod2",
+      "name": "Feijão 1kg",
+      "category": "Alimentos",
+      "price": 8.50,
+      "merchant": "merc1"
+    },
+    {
+      "id": "prod3",
+      "name": "Óleo de Soja 900ml",
+      "category": "Alimentos",
+      "price": 7.80,
+      "merchant": "merc2"
+    }
+  ]
+}
