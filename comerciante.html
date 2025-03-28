@@ -188,11 +188,8 @@
         const location = document.getElementById('merchantLocation').value;
         const token = document.getElementById('githubToken').value;
         
-        githubStore = new GitHubDataStore({
-          token: token,
-          owner: 'seu_usuario',  // Substituir pelo seu usuário GitHub
-          repo: 'seusprecos-data'
-        });
+        // Usar mock local independente do token
+        githubStore = new LocalDataStore();
 
         try {
           const merchant = {
