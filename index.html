@@ -60,11 +60,7 @@
       // Carregar localizações
       async function loadLocations() {
         try {
-          const store = new GitHubDataStore({
-            token: '', // Sem token necessário para leitura
-            owner: 'seu_usuario',
-            repo: 'seusprecos-data'
-          });
+          const store = new LocalDataStore();
           
           const merchants = await store.getMerchants();
           const locations = [...new Set(merchants.merchants.map(m => m.location))];
@@ -84,11 +80,7 @@
       // Carregar e exibir produtos
       async function loadProducts(searchTerm = '', category = '', location = '') {
         try {
-          const store = new GitHubDataStore({
-            token: '', // Sem token necessário para leitura
-            owner: 'seu_usuario',
-            repo: 'seusprecos-data'
-          });
+          const store = new LocalDataStore();
           
           const [products, merchants] = await Promise.all([
             store.getProducts(),
