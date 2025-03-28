@@ -5,9 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Seus Preços - Compare preços</title>
   <!-- Tailwind via PostCSS (build local) -->
-  <link href="styles.css" rel="stylesheet">
+  <link href="/seusprecos/styles.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <script src="scripts/github-api.js"></script>
+  <noscript>
+    <style>
+      .fa-search:before { content: "🔍"; }
+      .fa-box-open:before { content: "📦"; }
+      .fa-exclamation-triangle:before { content: "⚠️"; }
+    </style>
+  </noscript>
+  <script>
+    // Verifica se o Font Awesome foi carregado
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!window.FontAwesome) {
+        console.warn('Font Awesome não carregado, usando fallback');
+        const style = document.createElement('style');
+        style.textContent = `
+          .fa-search:before { content: "🔍"; }
+          .fa-box-open:before { content: "📦"; }
+          .fa-exclamation-triangle:before { content: "⚠️"; }
+        `;
+        document.head.appendChild(style);
+      }
+    });
+  </script>
+  <script>
+    // Dados inline
+    const productsData = {
+      products: [
+        {id: "prod1", name: "Arroz 5kg", category: "Alimentos", price: 25.90, merchant: "merc1"},
+        {id: "prod2", name: "Feijão 1kg", category: "Alimentos", price: 8.50, merchant: "merc1"},
+        {id: "prod3", name: "Óleo de Soja 900ml", category: "Alimentos", price: 7.80, merchant: "merc2"}
+      ]
+    };
+
+    const merchantsData = {
+      merchants: [
+        {id: "merc1", name: "Mercado do João", location: "Centro", rating: 4.5},
+        {id: "merc2", name: "Supermercado Bom Preço", location: "Vila Nova", rating: 4.2}
+      ],
+      last_id: 2
+    };
+  </script>
 </head>
 <body class="bg-gray-100">
   <div class="container mx-auto px-4 py-8">
@@ -60,9 +99,17 @@
       // Carregar localizações
       async function loadLocations() {
         try {
-          const store = new LocalDataStore();
+          const dataStore = {
+            getProducts: async () => productsData,
+            getMerchants: async () => merchantsData,
+            addMerchant: async (merchant) => {
+              merchant.id = `merc${++merchantsData.last_id}`;
+              merchantsData.merchants.push(merchant);
+              return { status: 'success' };
+            }
+          };
           
-          const merchants = await store.getMerchants();
+          const merchants = await dataStore.getMerchants();
           const locations = [...new Set(merchants.merchants.map(m => m.location))];
           
           locationFilter.innerHTML = '<option value="">Todas localizações</option>';
@@ -84,8 +131,8 @@
           
           console.log('Iniciando loadProducts');
           const [products, merchants] = await Promise.all([
-            store.getProducts(),
-            store.getMerchants()
+            dataStore.getProducts(),
+            dataStore.getMerchants()
           ]);
           console.log('Produtos carregados:', products);
           console.log('Comerciantes carregados:', merchants);
