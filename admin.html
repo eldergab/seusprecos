@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seus Preços - Painel Admin</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2e7d32;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    select, button {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Painel Administrativo</h1>
+    <div class="filters">
+      <select id="merchantFilter">
+        <option value="">Todos Comerciantes</option>
+      </select>
+      <select id="categoryFilter">
+        <option value="">Todas Categorias</option>
+      </select>
+      <button id="exportBtn">Exportar para CSV</button>
+    </div>
+    <table id="productsTable">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Categoria</th>
+          <th>Comerciante</th>
+          <th>Preço</th>
+          <th>Localização</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Carrega dados mockados
+      const productsData = {
+        products: [
+          {id: "prod1", name: "Arroz 5kg", category: "Alimentos", prices: {merc1: 25.90}},
+          {id: "prod2", name: "Feijão 1kg", category: "Alimentos", prices: {merc1: 8.50}},
+          {id: "prod3", name: "Óleo de Soja 900ml", category: "Alimentos", prices: {merc2: 7.80}}
+        ]
+      };
+
+      const merchantsData = {
+        merchants: [
+          {id: "merc1", name: "Mercado do João", location: "Centro", rating: 4.5},
+          {id: "merc2", name: "Supermercado Bom Preço", location: "Vila Nova", rating: 4.2}
+        ]
+      };
+
+      // Preenche filtros
+      const merchantFilter = document.getElementById('merchantFilter');
+      merchantsData.merchants.forEach(merchant => {
+        const option = document.createElement('option');
+        option.value = merchant.id;
+        option.textContent = merchant.name;
+        merchantFilter.appendChild(option);
+      });
+
+      const categoryFilter = document.getElementById('categoryFilter');
+      const categories = [...new Set(productsData.products.map(p => p.category))];
+      categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+      });
+
+      // Função para carregar produtos
+      function loadProducts(merchantId = '', category = '') {
+        const tbody = document.querySelector('#productsTable tbody');
+        tbody.innerHTML = '';
+
+        productsData.products.forEach(product => {
+          Object.entries(product.prices).forEach(([merchantId, price]) => {
+            const merchant = merchantsData.merchants.find(m => m.id === merchantId);
+            
+            if ((!merchantId || merchantId === merchantFilter.value) && 
+                (!category || product.category === category)) {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${product.name}</td>
+                <td>${product.category}</td>
+                <td>${merchant.name}</td>
+                <td>R$ ${price.toFixed(2)}</td>
+                <td>${merchant.location}</td>
+              `;
+              tbody.appendChild(row);
+            }
+          });
+        });
+      }
+
+      // Event listeners
+      merchantFilter.addEventListener('change', () => {
+        loadProducts(merchantFilter.value, categoryFilter.value);
+      });
+
+      categoryFilter.addEventListener('change', () => {
+        loadProducts(merchantFilter.value, categoryFilter.value);
+      });
+
+      // Exportar para CSV
+      document.getElementById('exportBtn').addEventListener('click', () => {
+        let csv = 'Produto,Categoria,Comerciante,Preço,Localização\n';
+        
+        productsData.products.forEach(product => {
+          Object.entries(product.prices).forEach(([merchantId, price]) => {
+            const merchant = merchantsData.merchants.find(m => m.id === merchantId);
+            csv += `"${product.name}","${product.category}","${merchant.name}",${price.toFixed(2)},"${merchant.location}"\n`;
+          });
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'relatorio_produtos.csv';
+        a.click();
+      });
+
+      // Carrega dados inicialmente
+      loadProducts();
+    });
+  </script>
+</body>
+</html>
