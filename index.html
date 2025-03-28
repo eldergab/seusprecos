@@ -82,10 +82,13 @@
         try {
           const store = new LocalDataStore();
           
+          console.log('Iniciando loadProducts');
           const [products, merchants] = await Promise.all([
             store.getProducts(),
             store.getMerchants()
           ]);
+          console.log('Produtos carregados:', products);
+          console.log('Comerciantes carregados:', merchants);
           
           results.innerHTML = '';
           

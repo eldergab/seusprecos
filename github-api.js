@@ -50,6 +50,7 @@ class LocalDataStore {
   }
 
   async getProducts() {
+    console.log('Carregando produtos:', this.products);
     return this.products;
   }
 
