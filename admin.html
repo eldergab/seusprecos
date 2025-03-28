@@ -81,21 +81,44 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      // Carrega dados mockados
-      const productsData = {
-        products: [
-          {id: "prod1", name: "Arroz 5kg", category: "Alimentos", prices: {merc1: 25.90}},
-          {id: "prod2", name: "Feijão 1kg", category: "Alimentos", prices: {merc1: 8.50}},
-          {id: "prod3", name: "Óleo de Soja 900ml", category: "Alimentos", prices: {merc2: 7.80}}
-        ]
-      };
+      // Carrega dados reais
+      async function loadData() {
+        try {
+          const [productsRes, merchantsRes] = await Promise.all([
+            fetch('data/products.json'),
+            fetch('data/merchants.json')
+          ]);
+          
+          if (!productsRes.ok || !merchantsRes.ok) {
+            throw new Error('Erro ao carregar dados');
+          }
 
-      const merchantsData = {
-        merchants: [
-          {id: "merc1", name: "Mercado do João", location: "Centro", rating: 4.5},
-          {id: "merc2", name: "Supermercado Bom Preço", location: "Vila Nova", rating: 4.2}
-        ]
-      };
+          const productsData = await productsRes.json();
+          const merchantsData = await merchantsRes.json();
+          
+          return { productsData, merchantsData };
+        } catch (error) {
+          console.error('Erro:', error);
+          // Fallback para dados mockados
+          return {
+            productsData: {
+              products: [
+                {id: "prod1", name: "Arroz 5kg", category: "Alimentos", prices: {merc1: 25.90}},
+                {id: "prod2", name: "Feijão 1kg", category: "Alimentos", prices: {merc1: 8.50}},
+                {id: "prod3", name: "Óleo de Soja 900ml", category: "Alimentos", prices: {merc2: 7.80}}
+              ]
+            },
+            merchantsData: {
+              merchants: [
+                {id: "merc1", name: "Mercado do João", location: "Centro", rating: 4.5},
+                {id: "merc2", name: "Supermercado Bom Preço", location: "Vila Nova", rating: 4.2}
+              ]
+            }
+          };
+        }
+      }
+
+      const { productsData, merchantsData } = await loadData();
 
       // Preenche filtros
       const merchantFilter = document.getElementById('merchantFilter');
