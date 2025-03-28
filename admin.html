@@ -85,8 +85,8 @@
       async function loadData() {
         try {
           const [productsRes, merchantsRes] = await Promise.all([
-            fetch('data/products.json'),
-            fetch('data/merchants.json')
+            fetch('/seusprecos/data/products.json'),
+            fetch('/seusprecos/data/merchants.json')
           ]);
           
           if (!productsRes.ok || !merchantsRes.ok) {
