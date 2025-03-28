@@ -4,13 +4,62 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Seus Preços - Área do Comerciante</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <script src="scripts/github-api.js"></script>
+  <style>
+    /* Estilos globais */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f4f6;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+    }
+    header {
+      margin-bottom: 2rem;
+    }
+    h1 {
+      font-size: 1.875rem;
+      font-weight: bold;
+      color: #1e40af;
+    }
+    .panel {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    input, button {
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 0.25rem;
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    .delete-btn {
+      color: #dc2626;
+      background: none;
+      border: none;
+      width: auto;
+    }
+    .delete-btn:hover {
+      color: #b91c1c;
+    }
+  </style>
 </head>
-<body class="bg-gray-100">
-  <div class="container mx-auto px-4 py-8">
-    <header class="mb-8">
+<body style="background-color: #f3f4f6; margin: 0; padding: 0;">
+  <div style="max-width: 1200px; margin: 0 auto; padding: 1rem 2rem;">
+    <header style="margin-bottom: 2rem;">
       <h1 class="text-3xl font-bold text-blue-800">Seus Preços</h1>
       <p class="text-gray-600">Área do Comerciante</p>
     </header>
@@ -23,7 +72,8 @@
           <div>
             <label class="block text-gray-700">Nome do Estabelecimento</label>
             <input type="text" id="merchantName" required 
-                   class="w-full px-4 py-2 border rounded-lg">
+                   class="w-full px-4 py-2 border rounded-lg"
+                   autocomplete="organization">
           </div>
           <div>
             <label class="block text-gray-700">Localização</label>
@@ -34,7 +84,8 @@
             <label class="block text-gray-700">Token GitHub</label>
             <input type="password" id="githubToken" required
                    class="w-full px-4 py-2 border rounded-lg"
-                   placeholder="Seu token de acesso pessoal do GitHub">
+                   placeholder="Seu token de acesso pessoal do GitHub"
+                   autocomplete="current-password">
           </div>
           <button type="submit" 
                   class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
@@ -75,6 +126,50 @@
   </div>
 
   <script>
+    // Dados mockados
+    const mockProducts = {
+      products: [
+        {id: "prod1", name: "Arroz 5kg", category: "Alimentos", prices: {merc1: 25.90}},
+        {id: "prod2", name: "Feijão 1kg", category: "Alimentos", prices: {merc1: 8.50}},
+        {id: "prod3", name: "Óleo de Soja 900ml", category: "Alimentos", prices: {merc2: 7.80}}
+      ]
+    };
+
+    const mockMerchants = {
+      merchants: [
+        {id: "merc1", name: "Mercado do João", location: "Centro", rating: 4.5},
+        {id: "merc2", name: "Supermercado Bom Preço", location: "Vila Nova", rating: 4.2}
+      ],
+      last_id: 2
+    };
+
+    // Implementação mockada do GitHubDataStore
+    class LocalDataStore {
+      constructor() {
+        this.products = JSON.parse(JSON.stringify(mockProducts));
+        this.merchants = JSON.parse(JSON.stringify(mockMerchants));
+      }
+
+      async getProducts() {
+        return this.products;
+      }
+
+      async updateProducts(products) {
+        this.products = products;
+        return {status: 'success'};
+      }
+
+      async getMerchants() {
+        return this.merchants;
+      }
+
+      async addMerchant(merchant) {
+        merchant.id = `merc${++this.merchants.last_id}`;
+        this.merchants.merchants.push(merchant);
+        return {status: 'success'};
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const merchantForm = document.getElementById('merchantForm');
       const productForm = document.getElementById('productForm');
@@ -145,7 +240,7 @@
               <div>
                 <span class="font-bold">R$ ${product.prices[currentMerchant.id].toFixed(2)}</span>
                 <button data-id="${product.id}" class="ml-2 text-red-600 hover:text-red-800">
-                  <i class="fas fa-trash"></i>
+                  🗑️
                 </button>
               </div>
             `;
