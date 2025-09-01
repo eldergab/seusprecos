@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sistema de Cardápio</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sistema de Cardápio</h1>
+            <a href="admin.html" class="admin-link">Admin</a>
+        </div>
+        <aside class="sidebar" id="main-menu">
+            <h2>Menu</h2>
+            <ul id="category-list">
+                <!-- Categorias serão inseridas aqui -->
+            </ul>
+        </aside>
+        <aside class="submenu" id="submenu">
+            <h2>Submenu</h2>
+            <ul id="submenu-list">
+                <!-- Submenu será inserido aqui -->
+            </ul>
+        </aside>
+        <main class="detail-content" id="detail-content">
+            <h2>Detalhes</h2>
+            <div id="detail-view">
+                <p>Selecione um item do submenu para ver os detalhes.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para adicionar item -->
+    <div id="item-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Adicionar Item</h3>
+            <form id="item-form">
+                <label for="item-category">Categoria:</label>
+                <select id="item-category" required></select>
+
+                <label for="item-name">Nome:</label>
+                <input type="text" id="item-name" required />
+
+                <label for="item-description">Descrição:</label>
+                <textarea id="item-description" rows="3" required></textarea>
+
+                <label for="item-price">Preço (R$):</label>
+                <input type="number" id="item-price" step="0.01" min="0" required />
+
+                <label for="item-image">URL da Imagem:</label>
+                <input type="url" id="item-image" placeholder="https://exemplo.com/imagem.jpg" />
+
+                <div class="modal-buttons">
+                    <button type="submit">Salvar</button>
+                    <button type="button" id="cancel-btn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
