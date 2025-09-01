@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin - Sistema de Cardápio</title>
+    <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-container">
+        <div class="login-form">
+            <h1>🔒 Acesso Administrativo</h1>
+            <p>Digite a senha para acessar o painel administrativo</p>
+            <input type="password" id="admin-password-input" placeholder="Digite a senha..." />
+            <button id="login-btn" class="login-btn">Entrar</button>
+            <button id="back-btn" class="back-btn">Voltar ao Cardápio</button>
+        </div>
+    </div>
+
+    <!-- Admin Panel (hidden by default) -->
+    <div id="admin-panel" class="admin-container hidden">
+        <header class="admin-header">
+            <h1>Painel Administrativo - Sistema de Cardápio</h1>
+            <a href="index.html" class="back-link">← Voltar ao Cardápio</a>
+        </header>
+
+        <div class="admin-content">
+            <aside class="admin-sidebar">
+                <h2>Gerenciamento</h2>
+                <ul>
+                    <li><button id="manage-categories-btn" class="admin-btn">Gerenciar Categorias</button></li>
+                    <li><button id="manage-submenus-btn" class="admin-btn">Gerenciar Submenus</button></li>
+                    <li><button id="manage-items-btn" class="admin-btn">Gerenciar Itens</button></li>
+                    <li><button id="view-data-btn" class="admin-btn">Visualizar Dados</button></li>
+                </ul>
+            </aside>
+
+            <main class="admin-main">
+                <div id="admin-view">
+                    <h2>Bem-vindo ao Painel Administrativo</h2>
+                    <p>Selecione uma opção no menu lateral para começar a gerenciar o cardápio.</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar/editar categoria -->
+    <div id="category-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="category-modal-title">Adicionar Categoria</h3>
+            <form id="category-form">
+                <label for="category-name">Nome da Categoria:</label>
+                <input type="text" id="category-name" required />
+
+                <div class="modal-buttons">
+                    <button type="submit">Salvar</button>
+                    <button type="button" id="category-cancel-btn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar/editar submenu -->
+    <div id="submenu-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="submenu-modal-title">Adicionar Submenu</h3>
+            <form id="submenu-form">
+                <label for="submenu-category">Categoria:</label>
+                <select id="submenu-category" required></select>
+
+                <label for="submenu-name">Nome do Submenu:</label>
+                <input type="text" id="submenu-name" required />
+
+                <div class="modal-buttons">
+                    <button type="submit">Salvar</button>
+                    <button type="button" id="submenu-cancel-btn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar/editar item -->
+    <div id="item-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="item-modal-title">Adicionar Item</h3>
+            <form id="item-form">
+                <label for="item-category">Categoria:</label>
+                <select id="item-category" required></select>
+
+                <label for="item-submenu">Submenu:</label>
+                <select id="item-submenu" required></select>
+
+                <label for="item-name">Nome:</label>
+                <input type="text" id="item-name" required />
+
+                <label for="item-description">Descrição:</label>
+                <textarea id="item-description" rows="3" required></textarea>
+
+                <label for="item-price">Preço (R$):</label>
+                <input type="number" id="item-price" step="0.01" min="0" required />
+
+                <label for="item-image">URL da Imagem:</label>
+                <input type="url" id="item-image" placeholder="https://exemplo.com/imagem.jpg" />
+
+                <div class="modal-buttons">
+                    <button type="submit">Salvar</button>
+                    <button type="button" id="item-cancel-btn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
