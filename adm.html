@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Administração - Sistema de Cardápio</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #222;
+    color: #eee;
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    max-width: 900px;
+    margin: 20px auto;
+    background: #333;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  h1, h2 {
+    color: #ffa500;
+  }
+  label {
+    display: block;
+    margin-top: 10px;
+  }
+  input, select, button, textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border-radius: 6px;
+    border: none;
+    font-size: 1rem;
+  }
+  button {
+    background: #ffa500;
+    color: #222;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+  }
+  button:hover {
+    background: #e59400;
+  }
+  .hidden {
+    display: none;
+  }
+  .error {
+    color: #f44336;
+    margin-top: 5px;
+  }
+  .list-section {
+    margin-top: 30px;
+  }
+  .list-item {
+    background: #444;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .list-item img {
+    height: 40px;
+    margin-right: 10px;
+    border-radius: 4px;
+  }
+  .list-item div {
+    flex-grow: 1;
+  }
+  .list-item button {
+    width: auto;
+    padding: 5px 10px;
+    margin-left: 5px;
+  }
+</style>
+</head>
+<body>
+<div class="container" id="login-container">
+  <h1>Login Administrativo</h1>
+  <form id="login-form">
+    <label for="username">Usuário:</label>
+    <input type="text" id="username" required />
+    <label for="password">Senha:</label>
+    <input type="password" id="password" required />
+    <button type="submit">Entrar</button>
+    <p class="error" id="login-error" style="display:none;">Usuário ou senha incorretos.</p>
+  </form>
+</div>
+
+<div class="container hidden" id="admin-panel">
+  <h1>Administração do Sistema de Cardápio</h1>
+
+  <section id="commerce-section">
+    <h2>Cadastro de Comércio</h2>
+    <form id="commerce-form">
+      <label for="logo-upload">Logomarca (upload de imagem):</label>
+      <input type="file" id="logo-upload" accept="image/*" required />
+      <input type="hidden" id="logo-base64" />
+
+      <label for="commerce-name">Nome do Comércio:</label>
+      <input type="text" id="commerce-name" required />
+
+      <label for="whatsapp-number">Número do WhatsApp:</label>
+      <input type="text" id="whatsapp-number" placeholder="(xx) xxxxx-xxxx" required />
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" required />
+
+      <label for="cnpj-cpf">CNPJ ou CPF:</label>
+      <input type="text" id="cnpj-cpf" required />
+
+      <label for="commerce-category">Categoria:</label>
+      <select id="commerce-category" required></select>
+
+      <button type="submit">Cadastrar Comércio</button>
+    </form>
+
+    <div class="list-section" id="commerce-list"></div>
+  </section>
+
+  <section id="category-section">
+    <h2>Cadastro de Categorias</h2>
+    <form id="category-form">
+      <label for="new-category">Nova Categoria:</label>
+      <input type="text" id="new-category" required />
+      <button type="submit">Adicionar Categoria</button>
+    </form>
+
+    <div class="list-section" id="category-list"></div>
+  </section>
+</div>
+
+<script>
+  const loginContainer = document.getElementById('login-container');
+  const adminPanel = document.getElementById('admin-panel');
+  const loginForm = document.getElementById('login-form');
+  const loginError = document.getElementById('login-error');
+
+  const commerceForm = document.getElementById('commerce-form');
+  const commerceCategorySelect = document.getElementById('commerce-category');
+  const commerceListDiv = document.getElementById('commerce-list');
+
+  const categoryForm = document.getElementById('category-form');
+  const categoryListDiv = document.getElementById('category-list');
+  const newCategoryInput = document.getElementById('new-category');
+
+  // Usuário e senha fixos para login
+  const USERNAME = 'admin';
+  const PASSWORD = 'admin123';
+
+  // Categorias padrão
+  const defaultCategories = [
+    "Bares",
+    "Restaurantes",
+    "Lanchonetes",
+    "Padarias",
+    "Pizzarias",
+    "Sorveterias",
+    "Supermercados",
+    "Diversão",
+    "Lazer",
+    "Entretenimento",
+    "Fast Food",
+    "Comida Rápida"
+  ];
+
+  // Função para carregar categorias do localStorage ou usar padrão
+  function loadCategories() {
+    const cats = localStorage.getItem('categories');
+    if (cats) {
+      return JSON.parse(cats);
+    } else {
+      localStorage.setItem('categories', JSON.stringify(defaultCategories));
+      return defaultCategories;
+    }
+  }
+
+  // Função para salvar categorias no localStorage
+  function saveCategories(categories) {
+    localStorage.setItem('categories', JSON.stringify(categories));
+  }
+
+  // Função para carregar comércios do localStorage
+  function loadCommerces() {
+    const commerces = localStorage.getItem('commerces');
+    return commerces ? JSON.parse(commerces) : [];
+  }
+
+  // Função para salvar comércios no localStorage
+  function saveCommerces(commerces) {
+    localStorage.setItem('commerces', JSON.stringify(commerces));
+  }
+
+  // Renderiza lista de categorias no select e na listagem
+  function renderCategories() {
+    const categories = loadCategories();
+    commerceCategorySelect.innerHTML = '';
+    categories.forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat;
+      commerceCategorySelect.appendChild(option);
+    });
+
+    categoryListDiv.innerHTML = '';
+    categories.forEach((cat, index) => {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+      div.textContent = cat;
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Excluir';
+      delBtn.onclick = () => {
+        if (confirm(`Excluir categoria "${cat}"?`)) {
+          categories.splice(index, 1);
+          saveCategories(categories);
+          renderCategories();
+        }
+      };
+
+      div.appendChild(delBtn);
+      categoryListDiv.appendChild(div);
+    });
+  }
+
+  // Renderiza lista de comércios cadastrados
+  function renderCommerces() {
+    const commerces = loadCommerces();
+    commerceListDiv.innerHTML = '';
+    commerces.forEach((commerce, index) => {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+
+      const img = document.createElement('img');
+      img.src = commerce.logoUrl || '';
+      img.alt = commerce.name;
+
+      const infoDiv = document.createElement('div');
+      infoDiv.innerHTML = `<strong>${commerce.name}</strong><br/>WhatsApp: ${commerce.whatsapp}<br/>Email: ${commerce.email}<br/>CNPJ/CPF: ${commerce.cnpjCpf}<br/>Categoria: ${commerce.category}`;
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Excluir';
+      delBtn.onclick = () => {
+        if (confirm(`Excluir comércio "${commerce.name}"?`)) {
+          commerces.splice(index, 1);
+          saveCommerces(commerces);
+          renderCommerces();
+        }
+      };
+
+      div.appendChild(img);
+      div.appendChild(infoDiv);
+      div.appendChild(delBtn);
+      commerceListDiv.appendChild(div);
+    });
+  }
+
+  // Login
+  loginForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    if (username === USERNAME && password === PASSWORD) {
+      loginContainer.classList.add('hidden');
+      adminPanel.classList.remove('hidden');
+      renderCategories();
+      renderCommerces();
+    } else {
+      loginError.style.display = 'block';
+    }
+  });
+
+  // Cadastro de categoria
+  categoryForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const newCat = newCategoryInput.value.trim();
+    if (newCat) {
+      const categories = loadCategories();
+      if (!categories.includes(newCat)) {
+        categories.push(newCat);
+        saveCategories(categories);
+        renderCategories();
+        newCategoryInput.value = '';
+      } else {
+        alert('Categoria já existe.');
+      }
+    }
+  });
+
+  // Cadastro de comércio
+  // Adiciona conversão da imagem para base64 antes do submit
+  const logoUploadInput = document.getElementById('logo-upload');
+  logoUploadInput.addEventListener('change', () => {
+    const file = logoUploadInput.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('logo-base64').value = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  commerceForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const logoBase64 = document.getElementById('logo-base64').value.trim();
+    const name = document.getElementById('commerce-name').value.trim();
+    const whatsapp = document.getElementById('whatsapp-number').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const cnpjCpf = document.getElementById('cnpj-cpf').value.trim();
+    const category = commerceCategorySelect.value;
+
+    if (logoBase64 && name && whatsapp && email && cnpjCpf && category) {
+      const commerces = loadCommerces();
+      commerces.push({ logoUrl: logoBase64, name, whatsapp, email, cnpjCpf, category });
+      saveCommerces(commerces);
+      renderCommerces();
+      commerceForm.reset();
+      document.getElementById('logo-upload').value = '';
+      document.getElementById('logo-base64').value = '';
+    } else {
+      alert('Preencha todos os campos.');
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cadastro de Cardápio - Sistema de Cardápio</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #222;
+    color: #eee;
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    max-width: 700px;
+    margin: 20px auto;
+    background: #333;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  h1, h2 {
+    color: #ffa500;
+  }
+  label {
+    display: block;
+    margin-top: 10px;
+  }
+  input, select, button, textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border-radius: 6px;
+    border: none;
+    font-size: 1rem;
+  }
+  button {
+    background: #ffa500;
+    color: #222;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+  }
+  button:hover {
+    background: #e59400;
+  }
+  .list-section {
+    margin-top: 30px;
+  }
+  .list-item {
+    background: #444;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .list-item div {
+    flex-grow: 1;
+  }
+  .list-item button {
+    width: auto;
+    padding: 5px 10px;
+    margin-left: 5px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Cadastro de Cardápio</h1>
+
+  <label for="commerce-select">Selecione o Comércio:</label>
+  <select id="commerce-select"></select>
+
+  <form id="product-form">
+    <label for="product-name">Nome do Produto:</label>
+    <input type="text" id="product-name" required />
+
+    <label for="product-type">Tipo:</label>
+    <select id="product-type" required>
+      <option value="und">Unidade</option>
+      <option value="kg">Kg</option>
+      <option value="peca">Peça</option>
+      <option value="litro">Litro</option>
+      <option value="ml">ml</option>
+      <option value="porcao">Porção</option>
+    </select>
+
+    <label for="product-description">Descrição:</label>
+    <textarea id="product-description" rows="3" required></textarea>
+
+    <label for="product-price">Valor (R$):</label>
+    <input type="number" id="product-price" step="0.01" min="0" required />
+
+    <button type="submit">Adicionar Produto</button>
+  </form>
+
+  <div class="list-section" id="product-list"></div>
+</div>
+
+<script>
+  const commerceSelect = document.getElementById('commerce-select');
+  const productForm = document.getElementById('product-form');
+  const productListDiv = document.getElementById('product-list');
+
+  // Carrega comércios do localStorage
+  function loadCommerces() {
+    const commerces = localStorage.getItem('commerces');
+    return commerces ? JSON.parse(commerces) : [];
+  }
+
+  // Carrega produtos do localStorage
+  function loadProducts() {
+    const products = localStorage.getItem('products');
+    return products ? JSON.parse(products) : [];
+  }
+
+  // Salva produtos no localStorage
+  function saveProducts(products) {
+    localStorage.setItem('products', JSON.stringify(products));
+  }
+
+  // Preenche select de comércios
+  function renderCommerceOptions() {
+    const commerces = loadCommerces();
+    commerceSelect.innerHTML = '';
+    commerces.forEach((commerce, index) => {
+      const option = document.createElement('option');
+      option.value = commerce.name;
+      option.textContent = commerce.name;
+      commerceSelect.appendChild(option);
+    });
+  }
+
+  // Renderiza lista de produtos do comércio selecionado
+  function renderProducts() {
+    const products = loadProducts();
+    const selectedCommerce = commerceSelect.value;
+    const filtered = products.filter(p => p.commerce === selectedCommerce);
+    productListDiv.innerHTML = '';
+
+    if (filtered.length === 0) {
+      productListDiv.textContent = 'Nenhum produto cadastrado para este comércio.';
+      return;
+    }
+
+    filtered.forEach((product, index) => {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+
+      const infoDiv = document.createElement('div');
+      infoDiv.innerHTML = `<strong>${product.name}</strong> (${product.type}) - R$ ${product.price.toFixed(2)}<br/>${product.description}`;
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Excluir';
+      delBtn.onclick = () => {
+        if (confirm(`Excluir produto "${product.name}"?`)) {
+          products.splice(products.indexOf(product), 1);
+          saveProducts(products);
+          renderProducts();
+        }
+      };
+
+      div.appendChild(infoDiv);
+      div.appendChild(delBtn);
+      productListDiv.appendChild(div);
+    });
+  }
+
+  // Evento para mudar comércio selecionado
+  commerceSelect.addEventListener('change', renderProducts);
+
+  // Evento para adicionar produto
+  productForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('product-name').value.trim();
+    const type = document.getElementById('product-type').value;
+    const description = document.getElementById('product-description').value.trim();
+    const price = parseFloat(document.getElementById('product-price').value);
+    const commerce = commerceSelect.value;
+
+    if (name && type && description && !isNaN(price) && commerce) {
+      const products = loadProducts();
+      products.push({ name, type, description, price, commerce });
+      saveProducts(products);
+      renderProducts();
+      productForm.reset();
+    } else {
+      alert('Preencha todos os campos corretamente.');
+    }
+  });
+
+  // Inicialização
+  renderCommerceOptions();
+  if (commerceSelect.options.length > 0) {
+    commerceSelect.selectedIndex = 0;
+    renderProducts();
+  }
+</script>
+</body>
+</html>
