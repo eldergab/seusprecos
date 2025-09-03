@@ -87,24 +87,30 @@
     <div class="commerce-list" id="commerce-list"></div>
   </main>
 
-<script>
+<script type="module">
+  import { db } from './firebase-config.js';
+  import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
   const categoryListEl = document.getElementById('category-list');
   const commerceListEl = document.getElementById('commerce-list');
 
-  // Carrega categorias e comércios do localStorage
-  function loadCategories() {
-    const cats = localStorage.getItem('categories');
-    return cats ? JSON.parse(cats) : [];
+  // Carrega categorias do Firestore
+  async function loadCategories() {
+    const categoriesCol = collection(db, "categories");
+    const categorySnapshot = await getDocs(categoriesCol);
+    return categorySnapshot.docs.map(doc => doc.data().name);
   }
 
-  function loadCommerces() {
-    const commerces = localStorage.getItem('commerces');
-    return commerces ? JSON.parse(commerces) : [];
+  // Carrega comércios do Firestore
+  async function loadCommerces() {
+    const commercesCol = collection(db, "commerces");
+    const commerceSnapshot = await getDocs(commercesCol);
+    return commerceSnapshot.docs.map(doc => doc.data());
   }
 
   // Renderiza lista de categorias
-  function renderCategories() {
-    const categories = loadCategories();
+  async function renderCategories() {
+    const categories = await loadCategories();
     categoryListEl.innerHTML = '';
     categories.forEach((cat, index) => {
       const li = document.createElement('li');
@@ -121,18 +127,18 @@
   }
 
   // Define categoria ativa e renderiza comércios vinculados
-  function setActiveCategory(index) {
-    const categories = loadCategories();
+  async function setActiveCategory(index) {
+    const categories = await loadCategories();
     const lis = categoryListEl.querySelectorAll('li');
     lis.forEach((li, i) => {
       li.classList.toggle('active', i === index);
     });
-    renderCommercesByCategory(categories[index]);
+    await renderCommercesByCategory(categories[index]);
   }
 
   // Renderiza comércios da categoria selecionada
-  function renderCommercesByCategory(category) {
-    const commerces = loadCommerces();
+  async function renderCommercesByCategory(category) {
+    const commerces = await loadCommerces();
     commerceListEl.innerHTML = '';
     const filtered = commerces.filter(c => c.category === category);
     if (filtered.length === 0) {

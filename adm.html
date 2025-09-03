@@ -134,7 +134,10 @@
   </section>
 </div>
 
-<script>
+<script type="module">
+  import { db } from './firebase-config.js';
+  import { collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
   const loginContainer = document.getElementById('login-container');
   const adminPanel = document.getElementById('admin-panel');
   const loginForm = document.getElementById('login-form');
@@ -168,70 +171,88 @@
     "Comida Rápida"
   ];
 
-  // Função para carregar categorias do localStorage ou usar padrão
-  function loadCategories() {
-    const cats = localStorage.getItem('categories');
-    if (cats) {
-      return JSON.parse(cats);
-    } else {
-      localStorage.setItem('categories', JSON.stringify(defaultCategories));
+  // Função para carregar categorias do Firestore ou usar padrão
+  async function loadCategories() {
+    const categoriesCol = collection(db, "categories");
+    const categorySnapshot = await getDocs(categoriesCol);
+    if (categorySnapshot.empty) {
+      // Se vazio, inicializa com padrão
+      for (const cat of defaultCategories) {
+        await addDoc(categoriesCol, { name: cat });
+      }
       return defaultCategories;
+    } else {
+      return categorySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
     }
   }
 
-  // Função para salvar categorias no localStorage
-  function saveCategories(categories) {
-    localStorage.setItem('categories', JSON.stringify(categories));
+  // Função para salvar categoria no Firestore
+  async function saveCategory(name) {
+    const categoriesCol = collection(db, "categories");
+    await addDoc(categoriesCol, { name });
   }
 
-  // Função para carregar comércios do localStorage
-  function loadCommerces() {
-    const commerces = localStorage.getItem('commerces');
-    return commerces ? JSON.parse(commerces) : [];
+  // Função para excluir categoria do Firestore
+  async function deleteCategory(id) {
+    await deleteDoc(doc(db, "categories", id));
   }
 
-  // Função para salvar comércios no localStorage
-  function saveCommerces(commerces) {
-    localStorage.setItem('commerces', JSON.stringify(commerces));
+  // Função para carregar comércios do Firestore
+  async function loadCommerces() {
+    const commercesCol = collection(db, "commerces");
+    const commerceSnapshot = await getDocs(commercesCol);
+    return commerceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  // Função para salvar comércio no Firestore
+  async function saveCommerce(commerce) {
+    const commercesCol = collection(db, "commerces");
+    await addDoc(commercesCol, commerce);
+  }
+
+  // Função para excluir comércio do Firestore
+  async function deleteCommerce(id) {
+    await deleteDoc(doc(db, "commerces", id));
   }
 
   // Renderiza lista de categorias no select e na listagem
-  function renderCategories() {
-    const categories = loadCategories();
+  async function renderCategories() {
+    const categories = await loadCategories();
     commerceCategorySelect.innerHTML = '';
+    categoryListDiv.innerHTML = '';
+
     categories.forEach(cat => {
       const option = document.createElement('option');
-      option.value = cat;
-      option.textContent = cat;
+      option.value = cat.name || cat;
+      option.textContent = cat.name || cat;
       commerceCategorySelect.appendChild(option);
-    });
 
-    categoryListDiv.innerHTML = '';
-    categories.forEach((cat, index) => {
       const div = document.createElement('div');
       div.className = 'list-item';
-      div.textContent = cat;
+      div.textContent = cat.name || cat;
 
-      const delBtn = document.createElement('button');
-      delBtn.textContent = 'Excluir';
-      delBtn.onclick = () => {
-        if (confirm(`Excluir categoria "${cat}"?`)) {
-          categories.splice(index, 1);
-          saveCategories(categories);
-          renderCategories();
-        }
-      };
+      if (cat.id) {
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Excluir';
+        delBtn.onclick = async () => {
+          if (confirm(`Excluir categoria "${cat.name}"?`)) {
+            await deleteCategory(cat.id);
+            await renderCategories();
+          }
+        };
+        div.appendChild(delBtn);
+      }
 
-      div.appendChild(delBtn);
       categoryListDiv.appendChild(div);
     });
   }
 
   // Renderiza lista de comércios cadastrados
-  function renderCommerces() {
-    const commerces = loadCommerces();
+  async function renderCommerces() {
+    const commerces = await loadCommerces();
     commerceListDiv.innerHTML = '';
-    commerces.forEach((commerce, index) => {
+
+    commerces.forEach(commerce => {
       const div = document.createElement('div');
       div.className = 'list-item';
 
@@ -244,11 +265,10 @@
 
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Excluir';
-      delBtn.onclick = () => {
+      delBtn.onclick = async () => {
         if (confirm(`Excluir comércio "${commerce.name}"?`)) {
-          commerces.splice(index, 1);
-          saveCommerces(commerces);
-          renderCommerces();
+          await deleteCommerce(commerce.id);
+          await renderCommerces();
         }
       };
 
@@ -260,7 +280,7 @@
   }
 
   // Login
-  loginForm.addEventListener('submit', e => {
+  loginForm.addEventListener('submit', async e => {
     e.preventDefault();
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
@@ -268,23 +288,22 @@
     if (username === USERNAME && password === PASSWORD) {
       loginContainer.classList.add('hidden');
       adminPanel.classList.remove('hidden');
-      renderCategories();
-      renderCommerces();
+      await renderCategories();
+      await renderCommerces();
     } else {
       loginError.style.display = 'block';
     }
   });
 
   // Cadastro de categoria
-  categoryForm.addEventListener('submit', e => {
+  categoryForm.addEventListener('submit', async e => {
     e.preventDefault();
     const newCat = newCategoryInput.value.trim();
     if (newCat) {
-      const categories = loadCategories();
-      if (!categories.includes(newCat)) {
-        categories.push(newCat);
-        saveCategories(categories);
-        renderCategories();
+      const categories = await loadCategories();
+      if (!categories.some(c => c.name === newCat)) {
+        await saveCategory(newCat);
+        await renderCategories();
         newCategoryInput.value = '';
       } else {
         alert('Categoria já existe.');
@@ -306,7 +325,7 @@
     }
   });
 
-  commerceForm.addEventListener('submit', e => {
+  commerceForm.addEventListener('submit', async e => {
     e.preventDefault();
     const logoBase64 = document.getElementById('logo-base64').value.trim();
     const name = document.getElementById('commerce-name').value.trim();
@@ -316,10 +335,8 @@
     const category = commerceCategorySelect.value;
 
     if (logoBase64 && name && whatsapp && email && cnpjCpf && category) {
-      const commerces = loadCommerces();
-      commerces.push({ logoUrl: logoBase64, name, whatsapp, email, cnpjCpf, category });
-      saveCommerces(commerces);
-      renderCommerces();
+      await saveCommerce({ logoUrl: logoBase64, name, whatsapp, email, cnpjCpf, category });
+      await renderCommerces();
       commerceForm.reset();
       document.getElementById('logo-upload').value = '';
       document.getElementById('logo-base64').value = '';

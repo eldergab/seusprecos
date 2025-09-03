@@ -99,10 +99,110 @@
   <div class="list-section" id="product-list"></div>
 </div>
 
-<script>
+<script type="module">
+  import { db } from './firebase-config.js';
+  import { collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
   const commerceSelect = document.getElementById('commerce-select');
   const productForm = document.getElementById('product-form');
-  const productListDiv = document.getElementById('product-list');
+  const productList = document.getElementById('product-list');
+
+  // Carrega comércios do Firestore para o select
+  async function loadCommerces() {
+    const commercesCol = collection(db, "commerces");
+    const commerceSnapshot = await getDocs(commercesCol);
+    return commerceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  // Carrega produtos do Firestore
+  async function loadProducts() {
+    const productsCol = collection(db, "products");
+    const productSnapshot = await getDocs(productsCol);
+    return productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  // Salva produto no Firestore
+  async function saveProduct(product) {
+    const productsCol = collection(db, "products");
+    await addDoc(productsCol, product);
+  }
+
+  // Exclui produto do Firestore
+  async function deleteProduct(id) {
+    await deleteDoc(doc(db, "products", id));
+  }
+
+  // Renderiza lista de produtos
+  async function renderProducts() {
+    const products = await loadProducts();
+    productList.innerHTML = '';
+
+    if (products.length === 0) {
+      productList.innerHTML = '<li>Nenhum produto cadastrado.</li>';
+      return;
+    }
+
+    products.forEach(product => {
+      const li = document.createElement('li');
+      li.className = 'product-item';
+
+      li.innerHTML = `
+        <h3>${product.name} (${product.type})</h3>
+        <p>${product.description}</p>
+        <p class="product-price">R$ ${product.price.toFixed(2)}</p>
+      `;
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'delete-btn';
+      delBtn.textContent = 'Excluir';
+      delBtn.onclick = async () => {
+        if (confirm(`Excluir produto "${product.name}"?`)) {
+          await deleteProduct(product.id);
+          await renderProducts();
+        }
+      };
+
+      li.appendChild(delBtn);
+      productList.appendChild(li);
+    });
+  }
+
+  // Preenche select de comércios
+  async function populateCommerceSelect() {
+    const commerces = await loadCommerces();
+    commerceSelect.innerHTML = '';
+    commerces.forEach(commerce => {
+      const option = document.createElement('option');
+      option.value = commerce.name;
+      option.textContent = commerce.name;
+      commerceSelect.appendChild(option);
+    });
+  }
+
+  // Evento submit do formulário
+  productForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const commerce = commerceSelect.value;
+    const name = document.getElementById('product-name').value.trim();
+    const type = document.getElementById('product-type').value.trim();
+    const description = document.getElementById('product-description').value.trim();
+    const price = parseFloat(document.getElementById('product-price').value);
+
+    if (commerce && name && type && description && !isNaN(price)) {
+      await saveProduct({ commerce, name, type, description, price });
+      await renderProducts();
+      productForm.reset();
+    } else {
+      alert('Preencha todos os campos corretamente.');
+    }
+  });
+
+  // Inicialização
+  (async () => {
+    await populateCommerceSelect();
+    await renderProducts();
+  })();
+</script>
 
   // Carrega comércios do localStorage
   function loadCommerces() {

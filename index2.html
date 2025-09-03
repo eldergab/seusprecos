@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Cardápio do Comércio - Sistema de Cardápio</title>
+<title>Menu do Comércio</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -12,132 +12,120 @@
     margin: 0;
     padding: 20px;
   }
-  h1 {
-    color: #ffa500;
-  }
-  .commerce-info {
+  #commerce-info {
     margin-bottom: 20px;
   }
-  .commerce-logo {
-    max-height: 100px;
-    margin-bottom: 10px;
-  }
-  .product-list {
-    list-style: none;
-    padding: 0;
+  #commerce-info img {
+    max-width: 200px;
+    border-radius: 8px;
   }
   .product-item {
     background: #333;
-    margin-bottom: 10px;
-    padding: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
     border-radius: 8px;
   }
   .product-item h3 {
-    margin: 0 0 5px 0;
+    margin: 0 0 10px 0;
     color: #ffa500;
   }
-  .product-item p {
-    margin: 0 0 5px 0;
-  }
-  .product-price {
-    font-weight: bold;
-  }
-  .whatsapp-link {
+  .product-item a {
     display: inline-block;
-    margin-top: 15px;
-    padding: 10px 20px;
-    background: #25d366;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #25d366;
     color: white;
-    border-radius: 8px;
     text-decoration: none;
-    font-weight: bold;
+    border-radius: 6px;
   }
-  .whatsapp-link:hover {
-    background: #1ebe57;
+  .product-item a:hover {
+    background-color: #1ebe57;
   }
 </style>
 </head>
 <body>
-  <div id="commerce-container">
-    <h1 id="commerce-name"></h1>
-    <img id="commerce-logo" class="commerce-logo" src="" alt="Logomarca do comércio" />
-    <p id="commerce-whatsapp"></p>
-    <a id="whatsapp-link" class="whatsapp-link" href="#" target="_blank">Entrar em contato pelo WhatsApp</a>
-  </div>
+  <div id="commerce-info"></div>
+  <div id="product-list"></div>
 
-  <h2>Cardápio</h2>
-  <ul id="product-list" class="product-list"></ul>
+<script type="module">
+  import { db } from './firebase-config.js';
+  import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-<script>
-  // Função para obter parâmetro da URL
-  function getQueryParam(param) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param);
+  // Obtém o parâmetro "commerce" da URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const commerceName = urlParams.get('commerce');
+
+  const commerceInfoDiv = document.getElementById('commerce-info');
+  const productListDiv = document.getElementById('product-list');
+
+  // Carrega dados do comércio pelo nome
+  async function loadCommerceByName(name) {
+    const commercesCol = collection(db, "commerces");
+    const q = query(commercesCol, where("name", "==", name));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      return querySnapshot.docs[0].data();
+    }
+    return null;
   }
 
-  // Carrega comércios e produtos do localStorage
-  function loadCommerces() {
-    const commerces = localStorage.getItem('commerces');
-    return commerces ? JSON.parse(commerces) : [];
+  // Carrega produtos do comércio
+  async function loadProductsByCommerce(name) {
+    const productsCol = collection(db, "products");
+    const q = query(productsCol, where("commerce", "==", name));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => doc.data());
   }
 
-  function loadProducts() {
-    const products = localStorage.getItem('products');
-    return products ? JSON.parse(products) : [];
-  }
-
-  // Renderiza cardápio do comércio selecionado
-  function renderMenu(commerceName) {
-    const commerces = loadCommerces();
-    const products = loadProducts();
-
-    const commerce = commerces.find(c => c.name === commerceName);
+  // Renderiza informações do comércio
+  async function renderCommerceInfo() {
+    const commerce = await loadCommerceByName(commerceName);
     if (!commerce) {
-      document.body.innerHTML = '<p>Comércio não encontrado.</p>';
+      commerceInfoDiv.textContent = "Comércio não encontrado.";
       return;
     }
+    commerceInfoDiv.innerHTML = `
+      <h2>${commerce.name}</h2>
+      <img src="${commerce.logoUrl}" alt="${commerce.name}" />
+      <p>WhatsApp: ${commerce.whatsapp}</p>
+      <p>Email: ${commerce.email}</p>
+      <p>CNPJ/CPF: ${commerce.cnpjCpf}</p>
+      <p>Categoria: ${commerce.category}</p>
+    `;
+  }
 
-    document.getElementById('commerce-name').textContent = commerce.name;
-    document.getElementById('commerce-logo').src = commerce.logoUrl || '';
-    document.getElementById('commerce-logo').alt = `Logomarca de ${commerce.name}`;
-    document.getElementById('commerce-whatsapp').textContent = `WhatsApp: ${commerce.whatsapp}`;
-
-    const whatsappLink = document.getElementById('whatsapp-link');
-    let phone = commerce.whatsapp.replace(/\D/g, '');
-    if (!phone.startsWith('55')) {
-      phone = '55' + phone;
-    }
-    whatsappLink.href = `https://wa.me/${phone}`;
-    whatsappLink.textContent = `Entrar em contato pelo WhatsApp`;
-
-    const productList = document.getElementById('product-list');
-    productList.innerHTML = '';
-
-    const filteredProducts = products.filter(p => p.commerce === commerceName);
-    if (filteredProducts.length === 0) {
-      productList.innerHTML = '<li>Nenhum produto cadastrado para este comércio.</li>';
+  // Renderiza lista de produtos com links para WhatsApp
+  async function renderProductList() {
+    const commerce = await loadCommerceByName(commerceName);
+    if (!commerce) {
+      productListDiv.textContent = "Comércio não encontrado.";
       return;
     }
-
-    filteredProducts.forEach(product => {
-      const li = document.createElement('li');
-      li.className = 'product-item';
-      li.innerHTML = `
-        <h3>${product.name} (${product.type})</h3>
+    const products = await loadProductsByCommerce(commerceName);
+    productListDiv.innerHTML = '';
+    if (products.length === 0) {
+      productListDiv.textContent = "Nenhum produto cadastrado para este comércio.";
+      return;
+    }
+    products.forEach(product => {
+      const productDiv = document.createElement('div');
+      productDiv.className = 'product-item';
+      const whatsappLink = `https://wa.me/${commerce.whatsapp.replace(/\D/g, '')}?text=Olá,%20gostaria%20de%20saber%20mais%20sobre%20o%20produto%20${encodeURIComponent(product.name)}`;
+      productDiv.innerHTML = `
+        <h3>${product.name}</h3>
         <p>${product.description}</p>
-        <p class="product-price">R$ ${product.price.toFixed(2)}</p>
-        <a href="https://wa.me/${phone}?text=Olá,%20gostaria%20de%20saber%20mais%20sobre%20o%20produto%20${encodeURIComponent(product.name)}" target="_blank" class="whatsapp-link">Comprar via WhatsApp</a>
+        <p>Preço: R$ ${product.price.toFixed(2)}</p>
+        <a href="${whatsappLink}" target="_blank" rel="noopener noreferrer">Contato via WhatsApp</a>
       `;
-      productList.appendChild(li);
+      productListDiv.appendChild(productDiv);
     });
   }
 
-  const commerceName = getQueryParam('commerce');
-  if (commerceName) {
-    renderMenu(decodeURIComponent(commerceName));
-  } else {
-    document.body.innerHTML = '<p>Comércio não especificado.</p>';
-  }
+  // Inicialização
+  (async () => {
+    await renderCommerceInfo();
+    await renderProductList();
+  })();
 </script>
 </body>
 </html>
