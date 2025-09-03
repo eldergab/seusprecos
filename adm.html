@@ -175,12 +175,14 @@
   async function loadCategories() {
     const categoriesCol = collection(db, "categories");
     const categorySnapshot = await getDocs(categoriesCol);
+
     if (categorySnapshot.empty) {
       // Se vazio, inicializa com padrão
       for (const cat of defaultCategories) {
         await addDoc(categoriesCol, { name: cat });
       }
-      return defaultCategories;
+      // Retorna sempre como objetos {id, name}
+      return defaultCategories.map(cat => ({ id: null, name: cat }));
     } else {
       return categorySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
     }
@@ -222,14 +224,16 @@
     categoryListDiv.innerHTML = '';
 
     categories.forEach(cat => {
+      // Preenche o select
       const option = document.createElement('option');
-      option.value = cat.name || cat;
-      option.textContent = cat.name || cat;
+      option.value = cat.name;
+      option.textContent = cat.name;
       commerceCategorySelect.appendChild(option);
 
+      // Lista visível de categorias
       const div = document.createElement('div');
       div.className = 'list-item';
-      div.textContent = cat.name || cat;
+      div.textContent = cat.name;
 
       if (cat.id) {
         const delBtn = document.createElement('button');
@@ -311,8 +315,7 @@
     }
   });
 
-  // Cadastro de comércio
-  // Adiciona conversão da imagem para base64 antes do submit
+  // Upload da logomarca em base64
   const logoUploadInput = document.getElementById('logo-upload');
   logoUploadInput.addEventListener('change', () => {
     const file = logoUploadInput.files[0];
@@ -325,6 +328,7 @@
     }
   });
 
+  // Cadastro de comércio
   commerceForm.addEventListener('submit', async e => {
     e.preventDefault();
     const logoBase64 = document.getElementById('logo-base64').value.trim();
