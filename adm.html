@@ -19,63 +19,29 @@
     padding: 20px;
     border-radius: 8px;
   }
-  h1, h2 {
-    color: #ffa500;
-  }
-  label {
-    display: block;
-    margin-top: 10px;
-  }
+  h1, h2 { color: #ffa500; }
+  label { display: block; margin-top: 10px; }
   input, select, button, textarea {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    border-radius: 6px;
-    border: none;
-    font-size: 1rem;
+    width: 100%; padding: 8px; margin-top: 5px;
+    border-radius: 6px; border: none; font-size: 1rem;
   }
-  button {
-    background: #ffa500;
-    color: #222;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 15px;
-  }
-  button:hover {
-    background: #e59400;
-  }
-  .hidden {
-    display: none;
-  }
-  .error {
-    color: #f44336;
-    margin-top: 5px;
-  }
-  .list-section {
-    margin-top: 30px;
-  }
+  button { background: #ffa500; color: #222; font-weight: bold; cursor: pointer; margin-top: 15px; }
+  button:hover { background: #e59400; }
+  .hidden { display: none; }
+  .error { color: #f44336; margin-top: 5px; }
+  .list-section { margin-top: 30px; }
   .list-item {
-    background: #444;
-    padding: 10px;
-    margin-top: 10px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    background: #444; padding: 10px; margin-top: 10px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: space-between;
   }
-  .list-item img {
-    height: 40px;
-    margin-right: 10px;
-    border-radius: 4px;
+  .list-item img { height: 40px; margin-right: 10px; border-radius: 4px; }
+  .list-item div { flex-grow: 1; }
+  .list-item button { width: auto; padding: 5px 10px; margin-left: 5px; }
+  .notice {
+    margin: 10px 0 0; padding: 10px; border-radius: 6px;
+    background: #2b3a2b; border-left: 4px solid #ffa500; color: #d2ffd2;
   }
-  .list-item div {
-    flex-grow: 1;
-  }
-  .list-item button {
-    width: auto;
-    padding: 5px 10px;
-    margin-left: 5px;
-  }
+  .notice.error { background: #3a2b2b; color: #ffd2d2; border-left-color: #f44336; }
 </style>
 </head>
 <body>
@@ -92,262 +58,4 @@
 </div>
 
 <div class="container hidden" id="admin-panel">
-  <h1>Administração do Sistema de Cardápio</h1>
-
-  <section id="commerce-section">
-    <h2>Cadastro de Comércio</h2>
-    <form id="commerce-form">
-      <label for="logo-upload">Logomarca (upload de imagem):</label>
-      <input type="file" id="logo-upload" accept="image/*" required />
-      <input type="hidden" id="logo-base64" />
-
-      <label for="commerce-name">Nome do Comércio:</label>
-      <input type="text" id="commerce-name" required />
-
-      <label for="whatsapp-number">Número do WhatsApp:</label>
-      <input type="text" id="whatsapp-number" placeholder="(xx) xxxxx-xxxx" required />
-
-      <label for="email">Email:</label>
-      <input type="email" id="email" required />
-
-      <label for="cnpj-cpf">CNPJ ou CPF:</label>
-      <input type="text" id="cnpj-cpf" required />
-
-      <label for="commerce-category">Categoria:</label>
-      <select id="commerce-category" required></select>
-
-      <button type="submit">Cadastrar Comércio</button>
-    </form>
-
-    <div class="list-section" id="commerce-list"></div>
-  </section>
-
-  <section id="category-section">
-    <h2>Cadastro de Categorias</h2>
-    <form id="category-form">
-      <label for="new-category">Nova Categoria:</label>
-      <input type="text" id="new-category" required />
-      <button type="submit">Adicionar Categoria</button>
-    </form>
-
-    <div class="list-section" id="category-list"></div>
-  </section>
-</div>
-
-<script type="module">
-  import { db } from './firebase-config.js';
-  import { collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-
-  const loginContainer = document.getElementById('login-container');
-  const adminPanel = document.getElementById('admin-panel');
-  const loginForm = document.getElementById('login-form');
-  const loginError = document.getElementById('login-error');
-
-  const commerceForm = document.getElementById('commerce-form');
-  const commerceCategorySelect = document.getElementById('commerce-category');
-  const commerceListDiv = document.getElementById('commerce-list');
-
-  const categoryForm = document.getElementById('category-form');
-  const categoryListDiv = document.getElementById('category-list');
-  const newCategoryInput = document.getElementById('new-category');
-
-  // Usuário e senha fixos para login
-  const USERNAME = 'admin';
-  const PASSWORD = 'admin123';
-
-  // Categorias padrão
-  const defaultCategories = [
-    "Bares",
-    "Restaurantes",
-    "Lanchonetes",
-    "Padarias",
-    "Pizzarias",
-    "Sorveterias",
-    "Supermercados",
-    "Diversão",
-    "Lazer",
-    "Entretenimento",
-    "Fast Food",
-    "Comida Rápida"
-  ];
-
-  // Função para carregar categorias do Firestore ou usar padrão
-  async function loadCategories() {
-    const categoriesCol = collection(db, "categories");
-    const categorySnapshot = await getDocs(categoriesCol);
-
-    if (categorySnapshot.empty) {
-      // Se vazio, inicializa com padrão
-      for (const cat of defaultCategories) {
-        await addDoc(categoriesCol, { name: cat });
-      }
-      // Retorna sempre como objetos {id, name}
-      return defaultCategories.map(cat => ({ id: null, name: cat }));
-    } else {
-      return categorySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
-    }
-  }
-
-  // Função para salvar categoria no Firestore
-  async function saveCategory(name) {
-    const categoriesCol = collection(db, "categories");
-    await addDoc(categoriesCol, { name });
-  }
-
-  // Função para excluir categoria do Firestore
-  async function deleteCategory(id) {
-    await deleteDoc(doc(db, "categories", id));
-  }
-
-  // Função para carregar comércios do Firestore
-  async function loadCommerces() {
-    const commercesCol = collection(db, "commerces");
-    const commerceSnapshot = await getDocs(commercesCol);
-    return commerceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  }
-
-  // Função para salvar comércio no Firestore
-  async function saveCommerce(commerce) {
-    const commercesCol = collection(db, "commerces");
-    await addDoc(commercesCol, commerce);
-  }
-
-  // Função para excluir comércio do Firestore
-  async function deleteCommerce(id) {
-    await deleteDoc(doc(db, "commerces", id));
-  }
-
-  // Renderiza lista de categorias no select e na listagem
-  async function renderCategories() {
-    const categories = await loadCategories();
-    commerceCategorySelect.innerHTML = '';
-    categoryListDiv.innerHTML = '';
-
-    categories.forEach(cat => {
-      // Preenche o select
-      const option = document.createElement('option');
-      option.value = cat.name;
-      option.textContent = cat.name;
-      commerceCategorySelect.appendChild(option);
-
-      // Lista visível de categorias
-      const div = document.createElement('div');
-      div.className = 'list-item';
-      div.textContent = cat.name;
-
-      if (cat.id) {
-        const delBtn = document.createElement('button');
-        delBtn.textContent = 'Excluir';
-        delBtn.onclick = async () => {
-          if (confirm(`Excluir categoria "${cat.name}"?`)) {
-            await deleteCategory(cat.id);
-            await renderCategories();
-          }
-        };
-        div.appendChild(delBtn);
-      }
-
-      categoryListDiv.appendChild(div);
-    });
-  }
-
-  // Renderiza lista de comércios cadastrados
-  async function renderCommerces() {
-    const commerces = await loadCommerces();
-    commerceListDiv.innerHTML = '';
-
-    commerces.forEach(commerce => {
-      const div = document.createElement('div');
-      div.className = 'list-item';
-
-      const img = document.createElement('img');
-      img.src = commerce.logoUrl || '';
-      img.alt = commerce.name;
-
-      const infoDiv = document.createElement('div');
-      infoDiv.innerHTML = `<strong>${commerce.name}</strong><br/>WhatsApp: ${commerce.whatsapp}<br/>Email: ${commerce.email}<br/>CNPJ/CPF: ${commerce.cnpjCpf}<br/>Categoria: ${commerce.category}`;
-
-      const delBtn = document.createElement('button');
-      delBtn.textContent = 'Excluir';
-      delBtn.onclick = async () => {
-        if (confirm(`Excluir comércio "${commerce.name}"?`)) {
-          await deleteCommerce(commerce.id);
-          await renderCommerces();
-        }
-      };
-
-      div.appendChild(img);
-      div.appendChild(infoDiv);
-      div.appendChild(delBtn);
-      commerceListDiv.appendChild(div);
-    });
-  }
-
-  // Login
-  loginForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
-
-    if (username === USERNAME && password === PASSWORD) {
-      loginContainer.classList.add('hidden');
-      adminPanel.classList.remove('hidden');
-      await renderCategories();
-      await renderCommerces();
-    } else {
-      loginError.style.display = 'block';
-    }
-  });
-
-  // Cadastro de categoria
-  categoryForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    const newCat = newCategoryInput.value.trim();
-    if (newCat) {
-      const categories = await loadCategories();
-      if (!categories.some(c => c.name === newCat)) {
-        await saveCategory(newCat);
-        await renderCategories();
-        newCategoryInput.value = '';
-      } else {
-        alert('Categoria já existe.');
-      }
-    }
-  });
-
-  // Upload da logomarca em base64
-  const logoUploadInput = document.getElementById('logo-upload');
-  logoUploadInput.addEventListener('change', () => {
-    const file = logoUploadInput.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('logo-base64').value = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-
-  // Cadastro de comércio
-  commerceForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    const logoBase64 = document.getElementById('logo-base64').value.trim();
-    const name = document.getElementById('commerce-name').value.trim();
-    const whatsapp = document.getElementById('whatsapp-number').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const cnpjCpf = document.getElementById('cnpj-cpf').value.trim();
-    const category = commerceCategorySelect.value;
-
-    if (logoBase64 && name && whatsapp && email && cnpjCpf && category) {
-      await saveCommerce({ logoUrl: logoBase64, name, whatsapp, email, cnpjCpf, category });
-      await renderCommerces();
-      commerceForm.reset();
-      document.getElementById('logo-upload').value = '';
-      document.getElementById('logo-base64').value = '';
-    } else {
-      alert('Preencha todos os campos.');
-    }
-  });
-</script>
-</body>
-</html>
+  <h1>Administração do Sistema de
