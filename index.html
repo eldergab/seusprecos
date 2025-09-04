@@ -5,7 +5,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sistema de Cardápio - Página Inicial</title>
-<style>
+  <style>
   body {
     font-family: Arial, sans-serif;
     background: #222;
@@ -75,6 +75,30 @@
     margin: 0;
     font-size: 1.1rem;
     color: #ffa500;
+  }
+
+  /* Responsive styles */
+  @media (max-width: 768px) {
+    body {
+      flex-direction: column;
+      height: auto;
+    }
+    .sidebar {
+      width: 100%;
+      padding: 10px;
+      overflow-y: visible;
+    }
+    .content {
+      padding: 10px;
+    }
+    .commerce-list {
+      justify-content: center;
+    }
+    .commerce-card {
+      width: 90%;
+      max-width: 300px;
+      margin: 0 auto 15px auto;
+    }
   }
 </style>
 </head>
