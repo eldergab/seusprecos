@@ -81,7 +81,12 @@
 </style>
 </head>
 <body>
-<div class="container">
+<div class="container" id="login-container" style="display: block;">
+  <h1>Login</h1>
+  <button id="google-login-btn" style="width: 100%; padding: 10px; margin-top: 15px; background-color: #ffa500; color: #222; font-weight: bold; border: none; border-radius: 6px; cursor: pointer;">Entrar com Google</button>
+</div>
+
+<div class="container hidden" id="catalog-panel" style="display: none;">
   <h1>Cadastro de Cardápio</h1>
 
   <label for="commerce-select">Selecione o Comércio:</label>
@@ -113,183 +118,84 @@
   <div class="list-section" id="product-list"></div>
 </div>
 
-import { db, auth, provider } from './firebase-config.js';
-import { collection, getDocs, addDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-import { signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+<script type="module">
+  import { db, auth, provider } from './firebase-config.js';
+  import { collection, getDocs, addDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+  import { signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
-const commerceSelect = document.getElementById('commerce-select');
-const productForm = document.getElementById('product-form');
-const productList = document.getElementById('product-list');
+  const loginContainer = document.getElementById('login-container');
+  const catalogPanel = document.getElementById('catalog-panel');
+  const commerceSelect = document.getElementById('commerce-select');
+  const productForm = document.getElementById('product-form');
+  const productList = document.getElementById('product-list');
 
-let currentUser = null;
+  let currentUser = null;
 
-// Carrega comércios do Firestore para o select
-async function loadCommerces() {
-  const commercesCol = collection(db, "commerces");
-  const commerceSnapshot = await getDocs(commercesCol);
-  return commerceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-}
-
-// Carrega produtos do Firestore
-async function loadProducts() {
-  const productsCol = collection(db, "products");
-  const productSnapshot = await getDocs(productsCol);
-  return productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-}
-
-// Salva produto no Firestore
-async function saveProduct(product) {
-  const productsCol = collection(db, "products");
-  await addDoc(productsCol, product);
-}
-
-// Exclui produto do Firestore
-async function deleteProduct(id) {
-  await deleteDoc(doc(db, "products", id));
-}
-
-// Renderiza lista de produtos
-async function renderProducts() {
-  const products = await loadProducts();
-  productList.innerHTML = '';
-
-  if (products.length === 0) {
-    productList.innerHTML = '<li>Nenhum produto cadastrado.</li>';
-    return;
-  }
-
-  products.forEach(product => {
-    const li = document.createElement('li');
-    li.className = 'product-item';
-
-    li.innerHTML = `
-      <h3>${product.name} (${product.type})</h3>
-      <p>${product.description}</p>
-      <p class="product-price">R$ ${product.price.toFixed(2)}</p>
-    `;
-
-    const delBtn = document.createElement('button');
-    delBtn.className = 'delete-btn';
-    delBtn.textContent = 'Excluir';
-    delBtn.onclick = async () => {
-      if (confirm(`Excluir produto "${product.name}"?`)) {
-        await deleteProduct(product.id);
-        await renderProducts();
-      }
-    };
-
-    li.appendChild(delBtn);
-    productList.appendChild(li);
-  });
-}
-
-// Preenche select de comércios
-async function populateCommerceSelect() {
-  const commerces = await loadCommerces();
-  commerceSelect.innerHTML = '';
-  commerces.forEach(commerce => {
-    const option = document.createElement('option');
-    option.value = commerce.name;
-    option.textContent = commerce.name;
-    commerceSelect.appendChild(option);
-  });
-}
-
-// Evento submit do formulário
-productForm.addEventListener('submit', async e => {
-  e.preventDefault();
-  const commerce = commerceSelect.value;
-  const name = document.getElementById('product-name').value.trim();
-  const type = document.getElementById('product-type').value.trim();
-  const description = document.getElementById('product-description').value.trim();
-  const price = parseFloat(document.getElementById('product-price').value);
-
-  if (commerce && name && type && description && !isNaN(price)) {
-    await saveProduct({ commerce, name, type, description, price });
-    await renderProducts();
-    productForm.reset();
-  } else {
-    alert('Preencha todos os campos corretamente.');
-  }
-});
-
-// Login com Google
-async function login() {
-  try {
-    const result = await signInWithPopup(auth, provider);
-    currentUser = result.user;
+  // Carrega comércios do Firestore para o select
+  async function loadCommerces() {
     const commercesCol = collection(db, "commerces");
-    const q = query(commercesCol, where("email", "==", currentUser.email));
-    const querySnapshot = await getDocs(q);
-    if (!querySnapshot.empty) {
-      // Usuário autorizado
-      await populateCommerceSelect();
-      await renderProducts();
-      document.body.style.display = 'block';
-    } else {
-      alert('Acesso negado. Você não está cadastrado como comerciante.');
-      await signOut(auth);
-      document.body.style.display = 'none';
+    const commerceSnapshot = await getDocs(commercesCol);
+    return commerceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  // Carrega produtos do Firestore
+  async function loadProducts() {
+    const productsCol = collection(db, "products");
+    const productSnapshot = await getDocs(productsCol);
+    return productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  // Salva produto no Firestore
+  async function saveProduct(product) {
+    const productsCol = collection(db, "products");
+    await addDoc(productsCol, product);
+  }
+
+  // Exclui produto do Firestore
+  async function deleteProduct(id) {
+    await deleteDoc(doc(db, "products", id));
+  }
+
+  // Renderiza lista de produtos
+  async function renderProducts() {
+    const products = await loadProducts();
+    productList.innerHTML = '';
+
+    if (products.length === 0) {
+      productList.innerHTML = '<li>Nenhum produto cadastrado.</li>';
+      return;
     }
-  } catch (error) {
-    console.error('Erro no login:', error);
-    alert('Falha no login. Tente novamente.');
-  }
-}
 
-// Monitorar estado de autenticação
-onAuthStateChanged(auth, user => {
-  if (user) {
-    currentUser = user;
-    document.body.style.display = 'block';
-    populateCommerceSelect();
-    renderProducts();
-  } else {
-    currentUser = null;
-    document.body.style.display = 'none';
-  }
-});
+    products.forEach(product => {
+      const li = document.createElement('li');
+      li.className = 'product-item';
 
-// Inicialização
-document.body.style.display = 'none';
-const loginButton = document.createElement('button');
-loginButton.textContent = 'Entrar com Google';
-loginButton.style.width = '100%';
-loginButton.style.padding = '10px';
-loginButton.style.marginTop = '15px';
-loginButton.style.backgroundColor = '#ffa500';
-loginButton.style.color = '#222';
-loginButton.style.fontWeight = 'bold';
-loginButton.style.border = 'none';
-loginButton.style.borderRadius = '6px';
-loginButton.style.cursor = 'pointer';
+      li.innerHTML = `
+        <h3>${product.name} (${product.type})</h3>
+        <p>${product.description}</p>
+        <p class="product-price">R$ ${product.price.toFixed(2)}</p>
+      `;
 
-loginButton.addEventListener('click', login);
-document.body.insertBefore(loginButton, document.body.firstChild);
-</script>
+      const delBtn = document.createElement('button');
+      delBtn.className = 'delete-btn';
+      delBtn.textContent = 'Excluir';
+      delBtn.onclick = async () => {
+        if (confirm(`Excluir produto "${product.name}"?`)) {
+          await deleteProduct(product.id);
+          await renderProducts();
+        }
+      };
 
-  // Carrega comércios do localStorage
-  function loadCommerces() {
-    const commerces = localStorage.getItem('commerces');
-    return commerces ? JSON.parse(commerces) : [];
-  }
-
-  // Carrega produtos do localStorage
-  function loadProducts() {
-    const products = localStorage.getItem('products');
-    return products ? JSON.parse(products) : [];
-  }
-
-  // Salva produtos no localStorage
-  function saveProducts(products) {
-    localStorage.setItem('products', JSON.stringify(products));
+      li.appendChild(delBtn);
+      productList.appendChild(li);
+    });
   }
 
   // Preenche select de comércios
-  function renderCommerceOptions() {
-    const commerces = loadCommerces();
+  async function populateCommerceSelect() {
+    const commerces = await loadCommerces();
     commerceSelect.innerHTML = '';
-    commerces.forEach((commerce, index) => {
+    commerces.forEach(commerce => {
       const option = document.createElement('option');
       option.value = commerce.name;
       option.textContent = commerce.name;
@@ -297,70 +203,71 @@ document.body.insertBefore(loginButton, document.body.firstChild);
     });
   }
 
-  // Renderiza lista de produtos do comércio selecionado
-  function renderProducts() {
-    const products = loadProducts();
-    const selectedCommerce = commerceSelect.value;
-    const filtered = products.filter(p => p.commerce === selectedCommerce);
-    productListDiv.innerHTML = '';
-
-    if (filtered.length === 0) {
-      productListDiv.textContent = 'Nenhum produto cadastrado para este comércio.';
-      return;
-    }
-
-    filtered.forEach((product, index) => {
-      const div = document.createElement('div');
-      div.className = 'list-item';
-
-      const infoDiv = document.createElement('div');
-      infoDiv.innerHTML = `<strong>${product.name}</strong> (${product.type}) - R$ ${product.price.toFixed(2)}<br/>${product.description}`;
-
-      const delBtn = document.createElement('button');
-      delBtn.textContent = 'Excluir';
-      delBtn.onclick = () => {
-        if (confirm(`Excluir produto "${product.name}"?`)) {
-          products.splice(products.indexOf(product), 1);
-          saveProducts(products);
-          renderProducts();
-        }
-      };
-
-      div.appendChild(infoDiv);
-      div.appendChild(delBtn);
-      productListDiv.appendChild(div);
-    });
-  }
-
-  // Evento para mudar comércio selecionado
-  commerceSelect.addEventListener('change', renderProducts);
-
-  // Evento para adicionar produto
-  productForm.addEventListener('submit', e => {
+  // Evento submit do formulário
+  productForm.addEventListener('submit', async e => {
     e.preventDefault();
+    const commerce = commerceSelect.value;
     const name = document.getElementById('product-name').value.trim();
-    const type = document.getElementById('product-type').value;
+    const type = document.getElementById('product-type').value.trim();
     const description = document.getElementById('product-description').value.trim();
     const price = parseFloat(document.getElementById('product-price').value);
-    const commerce = commerceSelect.value;
 
-    if (name && type && description && !isNaN(price) && commerce) {
-      const products = loadProducts();
-      products.push({ name, type, description, price, commerce });
-      saveProducts(products);
-      renderProducts();
+    if (commerce && name && type && description && !isNaN(price)) {
+      await saveProduct({ commerce, name, type, description, price });
+      await renderProducts();
       productForm.reset();
     } else {
       alert('Preencha todos os campos corretamente.');
     }
   });
 
-  // Inicialização
-  renderCommerceOptions();
-  if (commerceSelect.options.length > 0) {
-    commerceSelect.selectedIndex = 0;
-    renderProducts();
+  // Login com Google
+  async function login() {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      currentUser = result.user;
+      const commercesCol = collection(db, "commerces");
+      const q = query(commercesCol, where("email", "==", currentUser.email));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        // Usuário autorizado
+        loginContainer.style.display = 'none';
+        catalogPanel.style.display = 'block';
+        await populateCommerceSelect();
+        await renderProducts();
+      } else {
+        alert('Acesso negado. Você não está cadastrado como comerciante.');
+        await signOut(auth);
+        loginContainer.style.display = 'block';
+        catalogPanel.style.display = 'none';
+      }
+    } catch (error) {
+      console.error('Erro no login:', error);
+      alert('Falha no login. Tente novamente.');
+    }
   }
+
+  // Monitorar estado de autenticação
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      currentUser = user;
+      loginContainer.style.display = 'none';
+      catalogPanel.style.display = 'block';
+      populateCommerceSelect();
+      renderProducts();
+    } else {
+      currentUser = null;
+      loginContainer.style.display = 'block';
+      catalogPanel.style.display = 'none';
+    }
+  });
+
+  // Inicialização
+  loginContainer.style.display = 'block';
+  catalogPanel.style.display = 'none';
+
+  const loginButton = document.getElementById('google-login-btn');
+  loginButton.addEventListener('click', login);
 </script>
 </body>
 </html>
