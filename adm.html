@@ -163,12 +163,12 @@
 </div>
 
 <script type="module">
-  import { db } from './firebase-config.js';
-  import { collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+  import { db, auth, provider } from './firebase-config.js';
+  import { collection, getDocs, addDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+  import { signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
   const loginContainer = document.getElementById('login-container');
   const adminPanel = document.getElementById('admin-panel');
-  const loginForm = document.getElementById('login-form');
   const loginError = document.getElementById('login-error');
 
   const commerceForm = document.getElementById('commerce-form');
@@ -179,9 +179,7 @@
   const categoryListDiv = document.getElementById('category-list');
   const newCategoryInput = document.getElementById('new-category');
 
-  // Usuário e senha fixos para login
-  const USERNAME = 'admin';
-  const PASSWORD = 'admin123';
+  let currentUser = null;
 
   // Categorias padrão
   const defaultCategories = [
@@ -233,7 +231,7 @@
   async function saveCategory(name) {
     try {
       const categoriesCol = collection(db, "categories");
-      await addDoc(categoriesCol, { name });
+      await addDoc(categoriesCol, { name, userId: currentUser.uid });
     } catch (error) {
       console.error("Erro ao salvar categoria:", error);
       alert("Erro ao salvar categoria. Verifique a conexão com o Firestore.");
@@ -255,7 +253,8 @@
   async function loadCommerces() {
     try {
       const commercesCol = collection(db, "commerces");
-      const commerceSnapshot = await getDocs(commercesCol);
+      const q = query(commercesCol, where("userId", "==", currentUser.uid));
+      const commerceSnapshot = await getDocs(q);
       return commerceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
       console.error("Erro ao carregar comércios:", error);
@@ -268,7 +267,7 @@
   async function saveCommerce(commerce) {
     try {
       const commercesCol = collection(db, "commerces");
-      await addDoc(commercesCol, commerce);
+      await addDoc(commercesCol, { ...commerce, userId: currentUser.uid });
     } catch (error) {
       console.error("Erro ao salvar comércio:", error);
       alert("Erro ao salvar comércio. Verifique a conexão com o Firestore.");
@@ -351,21 +350,64 @@
     });
   }
 
-  // Login
-  loginForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
+  // Remove old login form event listener and replace with Google login
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.remove();
+  }
 
-    if (username === USERNAME && password === PASSWORD) {
-      loginContainer.classList.add('hidden');
-      adminPanel.classList.remove('hidden');
+  // Login with Google
+  async function login() {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      currentUser = result.user;
+      loginContainer.style.display = 'none';
+      adminPanel.style.display = 'block';
       await renderCategories();
       await renderCommerces();
+    } catch (error) {
+      console.error('Login failed:', error);
+      alert('Falha no login. Tente novamente.');
+    }
+  }
+
+  // Logout
+  async function logout() {
+    await signOut(auth);
+    currentUser = null;
+    loginContainer.style.display = 'block';
+    adminPanel.style.display = 'none';
+  }
+
+  // Monitor auth state
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      currentUser = user;
+      loginContainer.style.display = 'none';
+      adminPanel.style.display = 'block';
+      renderCategories();
+      renderCommerces();
     } else {
-      loginError.style.display = 'block';
+      currentUser = null;
+      loginContainer.style.display = 'block';
+      adminPanel.style.display = 'none';
     }
   });
+
+  // Replace old login form with Google login button
+  loginContainer.innerHTML = `
+    <h1>Login Administrativo</h1>
+    <button id="google-login-btn">Entrar com Google</button>
+  `;
+
+  document.getElementById('google-login-btn').addEventListener('click', login);
+
+  // Add logout button to admin panel
+  const logoutBtn = document.createElement('button');
+  logoutBtn.textContent = 'Sair';
+  logoutBtn.style.marginTop = '15px';
+  logoutBtn.addEventListener('click', logout);
+  adminPanel.appendChild(logoutBtn);
 
   // Cadastro de categoria
   categoryForm.addEventListener('submit', async e => {
