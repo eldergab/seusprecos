@@ -114,7 +114,7 @@
       <input type="text" id="cnpj-cpf" required />
 
       <label for="commerce-category">Categoria:</label>
-      <select id="commerce-category" required></select>
+      <select id="commerce-category"></select>
 
       <button type="submit">Cadastrar Comércio</button>
     </form>
@@ -175,14 +175,18 @@
   async function loadCategories() {
     const categoriesCol = collection(db, "categories");
     const categorySnapshot = await getDocs(categoriesCol);
-    if (categorySnapshot.empty) {
-      // Se vazio, inicializa com padrão
-      for (const cat of defaultCategories) {
+    return categorySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
+  }
+
+  // Função para garantir que todas as categorias padrão existam no Firestore
+  async function ensureDefaultCategories() {
+    const categoriesCol = collection(db, "categories");
+    const categorySnapshot = await getDocs(categoriesCol);
+    const existingCategories = categorySnapshot.docs.map(doc => doc.data().name);
+    for (const cat of defaultCategories) {
+      if (!existingCategories.includes(cat)) {
         await addDoc(categoriesCol, { name: cat });
       }
-      return defaultCategories;
-    } else {
-      return categorySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
     }
   }
 
@@ -217,6 +221,7 @@
 
   // Renderiza lista de categorias no select e na listagem
   async function renderCategories() {
+    await ensureDefaultCategories();
     const categories = await loadCategories();
     commerceCategorySelect.innerHTML = '';
     categoryListDiv.innerHTML = '';
