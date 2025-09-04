@@ -201,50 +201,89 @@
 
   // Função para carregar categorias do Firestore ou usar padrão
   async function loadCategories() {
-    const categoriesCol = collection(db, "categories");
-    const categorySnapshot = await getDocs(categoriesCol);
-    return categorySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
+    try {
+      const categoriesCol = collection(db, "categories");
+      const categorySnapshot = await getDocs(categoriesCol);
+      return categorySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
+    } catch (error) {
+      console.error("Erro ao carregar categorias:", error);
+      alert("Erro ao carregar categorias. Verifique a conexão com o Firestore.");
+      return [];
+    }
   }
 
   // Função para garantir que todas as categorias padrão existam no Firestore
   async function ensureDefaultCategories() {
-    const categoriesCol = collection(db, "categories");
-    const categorySnapshot = await getDocs(categoriesCol);
-    const existingCategories = categorySnapshot.docs.map(doc => doc.data().name);
-    for (const cat of defaultCategories) {
-      if (!existingCategories.includes(cat)) {
-        await addDoc(categoriesCol, { name: cat });
+    try {
+      const categoriesCol = collection(db, "categories");
+      const categorySnapshot = await getDocs(categoriesCol);
+      const existingCategories = categorySnapshot.docs.map(doc => doc.data().name);
+      for (const cat of defaultCategories) {
+        if (!existingCategories.includes(cat)) {
+          await addDoc(categoriesCol, { name: cat });
+        }
       }
+    } catch (error) {
+      console.error("Erro ao garantir categorias padrão:", error);
+      alert("Erro ao garantir categorias padrão. Verifique a conexão com o Firestore.");
     }
   }
 
   // Função para salvar categoria no Firestore
   async function saveCategory(name) {
-    const categoriesCol = collection(db, "categories");
-    await addDoc(categoriesCol, { name });
+    try {
+      const categoriesCol = collection(db, "categories");
+      await addDoc(categoriesCol, { name });
+    } catch (error) {
+      console.error("Erro ao salvar categoria:", error);
+      alert("Erro ao salvar categoria. Verifique a conexão com o Firestore.");
+      throw error; // Re-throw to handle in caller
+    }
   }
 
   // Função para excluir categoria do Firestore
   async function deleteCategory(id) {
-    await deleteDoc(doc(db, "categories", id));
+    try {
+      await deleteDoc(doc(db, "categories", id));
+    } catch (error) {
+      console.error("Erro ao excluir categoria:", error);
+      alert("Erro ao excluir categoria. Verifique a conexão com o Firestore.");
+    }
   }
 
   // Função para carregar comércios do Firestore
   async function loadCommerces() {
-    const commercesCol = collection(db, "commerces");
-    const commerceSnapshot = await getDocs(commercesCol);
-    return commerceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    try {
+      const commercesCol = collection(db, "commerces");
+      const commerceSnapshot = await getDocs(commercesCol);
+      return commerceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error("Erro ao carregar comércios:", error);
+      alert("Erro ao carregar comércios. Verifique a conexão com o Firestore.");
+      return [];
+    }
   }
 
   // Função para salvar comércio no Firestore
   async function saveCommerce(commerce) {
-    const commercesCol = collection(db, "commerces");
-    await addDoc(commercesCol, commerce);
+    try {
+      const commercesCol = collection(db, "commerces");
+      await addDoc(commercesCol, commerce);
+    } catch (error) {
+      console.error("Erro ao salvar comércio:", error);
+      alert("Erro ao salvar comércio. Verifique a conexão com o Firestore.");
+      throw error; // Re-throw to handle in caller
+    }
   }
 
   // Função para excluir comércio do Firestore
   async function deleteCommerce(id) {
-    await deleteDoc(doc(db, "commerces", id));
+    try {
+      await deleteDoc(doc(db, "commerces", id));
+    } catch (error) {
+      console.error("Erro ao excluir comércio:", error);
+      alert("Erro ao excluir comércio. Verifique a conexão com o Firestore.");
+    }
   }
 
   // Renderiza lista de categorias no select e na listagem
@@ -333,13 +372,18 @@
     e.preventDefault();
     const newCat = newCategoryInput.value.trim();
     if (newCat) {
-      const categories = await loadCategories();
-      if (!categories.some(c => c.name === newCat)) {
-        await saveCategory(newCat);
-        await renderCategories();
-        newCategoryInput.value = '';
-      } else {
-        alert('Categoria já existe.');
+      try {
+        const categories = await loadCategories();
+        if (!categories.some(c => c.name === newCat)) {
+          await saveCategory(newCat);
+          await renderCategories();
+          newCategoryInput.value = '';
+        } else {
+          alert('Categoria já existe.');
+        }
+      } catch (error) {
+        console.error("Erro no cadastro de categoria:", error);
+        alert("Erro ao cadastrar categoria. Tente novamente.");
       }
     }
   });
@@ -368,11 +412,16 @@
     const category = commerceCategorySelect.value;
 
     if (logoBase64 && name && whatsapp && email && cnpjCpf && category) {
-      await saveCommerce({ logoUrl: logoBase64, name, whatsapp, email, cnpjCpf, category });
-      await renderCommerces();
-      commerceForm.reset();
-      document.getElementById('logo-upload').value = '';
-      document.getElementById('logo-base64').value = '';
+      try {
+        await saveCommerce({ logoUrl: logoBase64, name, whatsapp, email, cnpjCpf, category });
+        await renderCommerces();
+        commerceForm.reset();
+        document.getElementById('logo-upload').value = '';
+        document.getElementById('logo-base64').value = '';
+      } catch (error) {
+        console.error("Erro no cadastro de comércio:", error);
+        alert("Erro ao cadastrar comércio. Tente novamente.");
+      }
     } else {
       alert('Preencha todos os campos.');
     }
