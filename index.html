@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -89,7 +90,7 @@
 
 <script type="module">
   import { db } from './firebase-config.js';
-  import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+  import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
   const categoryListEl = document.getElementById('category-list');
   const commerceListEl = document.getElementById('commerce-list');
@@ -101,6 +102,31 @@
     return categorySnapshot.docs.map(doc => doc.data().name);
   }
 
+  // Função para garantir que todas as categorias padrão existam no Firestore
+  async function ensureDefaultCategories() {
+    const categoriesCol = collection(db, "categories");
+    const categorySnapshot = await getDocs(categoriesCol);
+    const existingCategories = categorySnapshot.docs.map(doc => doc.data().name);
+    for (const cat of [
+      "Bares",
+      "Restaurantes",
+      "Lanchonetes",
+      "Padarias",
+      "Pizzarias",
+      "Sorveterias",
+      "Supermercados",
+      "Diversão",
+      "Lazer",
+      "Entretenimento",
+      "Fast Food",
+      "Comida Rápida"
+    ]) {
+      if (!existingCategories.includes(cat)) {
+        await addDoc(categoriesCol, { name: cat });
+      }
+    }
+  }
+
   // Carrega comércios do Firestore
   async function loadCommerces() {
     const commercesCol = collection(db, "commerces");
@@ -110,6 +136,7 @@
 
   // Renderiza lista de categorias
   async function renderCategories() {
+    await ensureDefaultCategories();
     const categories = await loadCategories();
     categoryListEl.innerHTML = '';
     categories.forEach((cat, index) => {
