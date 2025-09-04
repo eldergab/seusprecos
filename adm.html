@@ -402,12 +402,42 @@
 
   document.getElementById('google-login-btn').addEventListener('click', login);
 
-  // Add logout button to admin panel
+  // Add profile and logout buttons fixed in top right
+  const headerDiv = document.createElement('div');
+  headerDiv.style.position = 'fixed';
+  headerDiv.style.top = '10px';
+  headerDiv.style.right = '10px';
+  headerDiv.style.zIndex = '1000';
+  headerDiv.style.display = 'flex';
+  headerDiv.style.gap = '10px';
+
+  const profileBtn = document.createElement('button');
+  profileBtn.textContent = 'Perfil';
+  profileBtn.style.background = '#ffa500';
+  profileBtn.style.color = '#222';
+  profileBtn.style.border = 'none';
+  profileBtn.style.padding = '8px 12px';
+  profileBtn.style.borderRadius = '6px';
+  profileBtn.style.cursor = 'pointer';
+  profileBtn.style.fontWeight = 'bold';
+  profileBtn.addEventListener('click', () => {
+    alert(`Usuário: ${currentUser.email}`);
+  });
+
   const logoutBtn = document.createElement('button');
   logoutBtn.textContent = 'Sair';
-  logoutBtn.style.marginTop = '15px';
+  logoutBtn.style.background = '#ffa500';
+  logoutBtn.style.color = '#222';
+  logoutBtn.style.border = 'none';
+  logoutBtn.style.padding = '8px 12px';
+  logoutBtn.style.borderRadius = '6px';
+  logoutBtn.style.cursor = 'pointer';
+  logoutBtn.style.fontWeight = 'bold';
   logoutBtn.addEventListener('click', logout);
-  adminPanel.appendChild(logoutBtn);
+
+  headerDiv.appendChild(profileBtn);
+  headerDiv.appendChild(logoutBtn);
+  document.body.appendChild(headerDiv);
 
   // Cadastro de categoria
   categoryForm.addEventListener('submit', async e => {
