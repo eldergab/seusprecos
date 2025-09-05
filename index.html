@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -75,21 +76,6 @@
     font-size: 1.1rem;
     color: #ffa500;
   }
-  .job-button {
-    background-color: #4CAF50;
-    color: white;
-    padding: 12px;
-    text-align: center;
-    text-decoration: none;
-    display: block;
-    border-radius: 6px;
-    margin-top: 20px;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
-  }
-  .job-button:hover {
-    background-color: #45a049;
-  }
 
   /* Responsive styles */
   @media (max-width: 768px) {
@@ -121,7 +107,6 @@
     <img src="logo-seusprecos.png" alt="Seus Preços Logo" style="width: 180px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;" />
     <h2>Categorias</h2>
     <ul class="category-list" id="category-list"></ul>
-    <a href="emprego.html" class="job-button">Oferta de Emprego</a>
   </aside>
   <main class="content">
     <h2>Comércios</h2>
@@ -208,3 +193,26 @@
     const commerces = await loadCommerces();
     commerceListEl.innerHTML = '';
     const filtered = commerces.filter(c => c.category === category);
+    if (filtered.length === 0) {
+      commerceListEl.textContent = 'Nenhum comércio nesta categoria.';
+      return;
+    }
+    filtered.forEach(commerce => {
+      const card = document.createElement('div');
+      card.className = 'commerce-card';
+      card.innerHTML = `
+        <img src="${commerce.logoUrl}" alt="${commerce.name}" />
+        <h3>${commerce.name}</h3>
+      `;
+      card.addEventListener('click', () => {
+        // Redireciona para index2.html com parâmetro do comércio
+        window.location.href = `index2.html?commerce=${encodeURIComponent(commerce.name)}`;
+      });
+      commerceListEl.appendChild(card);
+    });
+  }
+
+  renderCategories();
+</script>
+</body>
+</html>
