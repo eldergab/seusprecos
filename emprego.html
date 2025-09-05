@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vagas de Emprego - Seus Preços</title>
+<link rel="manifest" href="manifest.json" />
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #222;
+    color: #eee;
+    margin: 0;
+    padding: 20px;
+  }
+  .container {
+    max-width: 700px;
+    margin: 20px auto;
+    background: #333;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  h1 {
+    color: #ffa500;
+  }
+  .job-item {
+    background: #444;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+  }
+  .job-item h3 {
+    margin: 0 0 10px 0;
+    color: #ffa500;
+  }
+  .job-item p {
+    margin: 0 0 10px 0;
+  }
+  .job-item a {
+    display: inline-block;
+    padding: 8px 12px;
+    background-color: #25d366;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+  }
+  .job-item a:hover {
+    background-color: #1ebe57;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Vagas de Emprego</h1>
+  <div id="jobs-list"></div>
+</div>
+
+<script type="module">
+  import { db } from './firebase-config.js';
+  import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+  const jobsListDiv = document.getElementById('jobs-list');
+
+  // Função para carregar e renderizar as vagas de emprego
+  async function renderJobs() {
+    try {
+      const jobsCol = collection(db, "job-offers");
+      const jobSnapshot = await getDocs(jobsCol);
+      const jobs = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      jobsListDiv.innerHTML = '';
+      if (jobs.length === 0) {
+        jobsListDiv.textContent = 'Nenhuma vaga de emprego disponível no momento.';
+        return;
+      }
+
+      jobs.forEach(job => {
+        const jobDiv = document.createElement('div');
+        jobDiv.className = 'job-item';
+
+        const whatsappLink = `https://wa.me/${job.whatsapp.replace(/\D/g, '')}?text=Olá,%20gostaria%20de%20me%20candidatar%20à%20vaga%20de%20${encodeURIComponent(job.name)}.`;
+        
+        jobDiv.innerHTML = `
+          <h3>${job.name} - ${job.commerceName}</h3>
+          <p>${job.description}</p>
+          <a href="${whatsappLink}" target="_blank" rel="noopener noreferrer">Candidatar-se via WhatsApp</a>
+        `;
+        jobsListDiv.appendChild(jobDiv);
+      });
+    } catch (error) {
+      console.error("Erro ao carregar vagas de emprego:", error);
+      jobsListDiv.textContent = "Erro ao carregar as vagas. Tente novamente mais tarde.";
+    }
+  }
+
+  // Inicialização
+  renderJobs();
+</script>
+</body>
+</html>
