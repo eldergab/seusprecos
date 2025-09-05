@@ -5,10 +5,78 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sistema de Cardápio - Página Inicial</title>
   <style>
-  /* ... (código CSS existente) ... */
-
+  body {
+    font-family: Arial, sans-serif;
+    background: #222;
+    color: #eee;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    height: 100vh;
+  }
+  .sidebar {
+    width: 220px;
+    background: #333;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .sidebar h2 {
+    color: #ffa500;
+    margin-bottom: 15px;
+  }
+  .category-list {
+    list-style: none;
+    padding: 0;
+  }
+  .category-list li {
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #444;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  .category-list li:hover,
+  .category-list li.active {
+    background-color: #ffa500;
+    color: #222;
+  }
+  .content {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .commerce-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  .commerce-card {
+    background: #333;
+    border-radius: 8px;
+    width: 180px;
+    padding: 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: box-shadow 0.3s ease;
+  }
+  .commerce-card:hover {
+    box-shadow: 0 0 10px #ffa500;
+  }
+  .commerce-card img {
+    max-width: 100%;
+    height: 100px;
+    object-fit: contain;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  .commerce-card h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #ffa500;
+  }
   .job-button {
-    background-color: #4CAF50; /* Cor verde para o botão */
+    background-color: #4CAF50;
     color: white;
     padding: 12px;
     text-align: center;
@@ -22,7 +90,31 @@
   .job-button:hover {
     background-color: #45a049;
   }
-  </style>
+
+  /* Responsive styles */
+  @media (max-width: 768px) {
+    body {
+      flex-direction: column;
+      height: auto;
+    }
+    .sidebar {
+      width: 100%;
+      padding: 10px;
+      overflow-y: visible;
+    }
+    .content {
+      padding: 10px;
+    }
+    .commerce-list {
+      justify-content: center;
+    }
+    .commerce-card {
+      width: 90%;
+      max-width: 300px;
+      margin: 0 auto 15px auto;
+    }
+  }
+</style>
 </head>
 <body>
   <aside class="sidebar">
@@ -37,7 +129,82 @@
   </main>
 
 <script type="module">
-  // ... (código JavaScript existente) ...
-</script>
-</body>
-</html>
+  import { db } from './firebase-config.js';
+  import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+  const categoryListEl = document.getElementById('category-list');
+  const commerceListEl = document.getElementById('commerce-list');
+
+  // Carrega categorias do Firestore
+  async function loadCategories() {
+    const categoriesCol = collection(db, "categories");
+    const categorySnapshot = await getDocs(categoriesCol);
+    return categorySnapshot.docs.map(doc => doc.data().name);
+  }
+
+  // Função para garantir que todas as categorias padrão existam no Firestore
+  async function ensureDefaultCategories() {
+    const categoriesCol = collection(db, "categories");
+    const categorySnapshot = await getDocs(categoriesCol);
+    const existingCategories = categorySnapshot.docs.map(doc => doc.data().name);
+    for (const cat of [
+      "Bares",
+      "Restaurantes",
+      "Lanchonetes",
+      "Padarias",
+      "Pizzarias",
+      "Sorveterias",
+      "Supermercados",
+      "Diversão",
+      "Lazer",
+      "Entretenimento",
+      "Fast Food",
+      "Comida Rápida"
+    ]) {
+      if (!existingCategories.includes(cat)) {
+        await addDoc(categoriesCol, { name: cat });
+      }
+    }
+  }
+
+  // Carrega comércios do Firestore
+  async function loadCommerces() {
+    const commercesCol = collection(db, "commerces");
+    const commerceSnapshot = await getDocs(commercesCol);
+    return commerceSnapshot.docs.map(doc => doc.data());
+  }
+
+  // Renderiza lista de categorias
+  async function renderCategories() {
+    await ensureDefaultCategories();
+    const categories = await loadCategories();
+    categoryListEl.innerHTML = '';
+    categories.forEach((cat, index) => {
+      const li = document.createElement('li');
+      li.textContent = cat;
+      li.dataset.index = index;
+      li.addEventListener('click', () => {
+        setActiveCategory(index);
+      });
+      categoryListEl.appendChild(li);
+    });
+    if (categories.length > 0) {
+      setActiveCategory(0);
+    }
+  }
+
+  // Define categoria ativa e renderiza comércios vinculados
+  async function setActiveCategory(index) {
+    const categories = await loadCategories();
+    const lis = categoryListEl.querySelectorAll('li');
+    lis.forEach((li, i) => {
+      li.classList.toggle('active', i === index);
+    });
+    await renderCommercesByCategory(categories[index]);
+  }
+
+  // Renderiza comércios da categoria selecionada
+  async function renderCommercesByCategory(category) {
+    const commerces = await loadCommerces();
+    commerceListEl.innerHTML = '';
+    const filtered = commerces.filter(c => c.category === category);
