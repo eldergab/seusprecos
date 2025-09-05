@@ -92,6 +92,22 @@
     font-size: 1.1rem;
     color: #ffa500;
   }
+  /* Estilo do botão de instalação */
+  #installButton {
+    background-color: #ffa500;
+    color: #222;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 5px;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: none; /* Inicia oculto e é exibido pelo JS */
+  }
 
   /* Responsive styles */
   @media (max-width: 768px) {
@@ -129,12 +145,41 @@
     <div class="commerce-list" id="commerce-list"></div>
   </main>
 
+  <button id="installButton">Instalar App</button>
+
 <script type="module">
   import { db } from './firebase-config.js';
   import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
   const categoryListEl = document.getElementById('category-list');
   const commerceListEl = document.getElementById('commerce-list');
+
+  // Variável para armazenar o evento de instalação do PWA
+  let deferredPrompt;
+  const installButton = document.getElementById('installButton');
+
+  // Captura o evento beforeinstallprompt para mostrar o botão de instalação
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installButton.style.display = 'block';
+  });
+
+  // Dispara o prompt de instalação ao clicar no botão
+  installButton.addEventListener('click', () => {
+    installButton.style.display = 'none';
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('Usuário aceitou a instalação do PWA');
+        } else {
+          console.log('Usuário recusou a instalação do PWA');
+        }
+        deferredPrompt = null;
+      });
+    }
+  });
 
   // Carrega categorias do Firestore
   async function loadCategories() {
