@@ -1,11 +1,27 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sistema de Cardápio - Página Inicial</title>
-  <style>
+
+<link rel="manifest" href="/manifest.json" />
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => {
+          console.log('Service Worker registrado com sucesso: ', reg.scope);
+        })
+        .catch(err => {
+          console.error('Falha no registro do Service Worker: ', err);
+        });
+    });
+  }
+</script>
+
+<style>
   body {
     font-family: Arial, sans-serif;
     background: #222;
