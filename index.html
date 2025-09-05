@@ -21,6 +21,13 @@
     padding: 20px;
     overflow-y: auto;
   }
+  .sidebar .logo {
+    width: 180px;
+    margin-bottom: 15px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
   .sidebar h2 {
     color: #ffa500;
     margin-bottom: 15px;
@@ -41,6 +48,15 @@
   .category-list li.active {
     background-color: #ffa500;
     color: #222;
+  }
+  .category-list li.loading {
+    cursor: default;
+    background: transparent;
+    color: #aaa;
+  }
+  .commerce-list a {
+    text-decoration: none;
+    color: inherit;
   }
   .content {
     flex-grow: 1;
@@ -104,115 +120,117 @@
 </head>
 <body>
   <aside class="sidebar">
-    <img src="logo-seusprecos.png" alt="Seus Preços Logo" style="width: 180px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;" />
+    <img src="logo-seusprecos.png" alt="Seus Preços Logo" class="logo" />
     <h2>Categorias</h2>
     <ul class="category-list" id="category-list"></ul>
   </aside>
   <main class="content">
-    <h2>Comércios</h2>
+    <h2 id="commerce-title">Comércios</h2>
     <div class="commerce-list" id="commerce-list"></div>
   </main>
 
 <script type="module">
   import { db } from './firebase-config.js';
-  import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+  import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
   const categoryListEl = document.getElementById('category-list');
   const commerceListEl = document.getElementById('commerce-list');
+  const commerceTitleEl = document.getElementById('commerce-title');
+
+  let allCategories = [];
+  let allCommerces = [];
 
   // Carrega categorias do Firestore
   async function loadCategories() {
     const categoriesCol = collection(db, "categories");
     const categorySnapshot = await getDocs(categoriesCol);
-    return categorySnapshot.docs.map(doc => doc.data().name);
-  }
-
-  // Função para garantir que todas as categorias padrão existam no Firestore
-  async function ensureDefaultCategories() {
-    const categoriesCol = collection(db, "categories");
-    const categorySnapshot = await getDocs(categoriesCol);
-    const existingCategories = categorySnapshot.docs.map(doc => doc.data().name);
-    for (const cat of [
-      "Bares",
-      "Restaurantes",
-      "Lanchonetes",
-      "Padarias",
-      "Pizzarias",
-      "Sorveterias",
-      "Supermercados",
-      "Diversão",
-      "Lazer",
-      "Entretenimento",
-      "Fast Food",
-      "Comida Rápida"
-    ]) {
-      if (!existingCategories.includes(cat)) {
-        await addDoc(categoriesCol, { name: cat });
-      }
-    }
+    allCategories = categorySnapshot.docs.map(doc => doc.data().name).sort();
   }
 
   // Carrega comércios do Firestore
   async function loadCommerces() {
     const commercesCol = collection(db, "commerces");
     const commerceSnapshot = await getDocs(commercesCol);
-    return commerceSnapshot.docs.map(doc => doc.data());
+    allCommerces = commerceSnapshot.docs.map(doc => doc.data());
   }
 
   // Renderiza lista de categorias
-  async function renderCategories() {
-    await ensureDefaultCategories();
-    const categories = await loadCategories();
+  function renderCategories() {
     categoryListEl.innerHTML = '';
-    categories.forEach((cat, index) => {
+    allCategories.forEach((cat, index) => {
       const li = document.createElement('li');
       li.textContent = cat;
       li.dataset.index = index;
-      li.addEventListener('click', () => {
-        setActiveCategory(index);
+      li.setAttribute('role', 'button');
+      li.setAttribute('tabindex', '0');
+
+      const selectCategory = () => {
+        // Remove active class from all other items
+        categoryListEl.querySelectorAll('li').forEach(item => item.classList.remove('active'));
+        // Add active class to the clicked one
+        li.classList.add('active');
+        // Render commerces for this category
+        commerceTitleEl.textContent = `Comércios em "${cat}"`;
+        renderCommercesByCategory(cat);
+      };
+
+      li.addEventListener('click', selectCategory);
+      li.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          selectCategory();
+        }
       });
       categoryListEl.appendChild(li);
     });
-    if (categories.length > 0) {
-      setActiveCategory(0);
+
+    // Set the first category as active by default
+    if (allCategories.length > 0) {
+      categoryListEl.querySelector('li').classList.add('active');
+      commerceTitleEl.textContent = `Comércios em "${allCategories[0]}"`;
+      renderCommercesByCategory(allCategories[0]);
     }
   }
 
-  // Define categoria ativa e renderiza comércios vinculados
-  async function setActiveCategory(index) {
-    const categories = await loadCategories();
-    const lis = categoryListEl.querySelectorAll('li');
-    lis.forEach((li, i) => {
-      li.classList.toggle('active', i === index);
-    });
-    await renderCommercesByCategory(categories[index]);
-  }
-
   // Renderiza comércios da categoria selecionada
-  async function renderCommercesByCategory(category) {
-    const commerces = await loadCommerces();
+  function renderCommercesByCategory(category) {
     commerceListEl.innerHTML = '';
-    const filtered = commerces.filter(c => c.category === category);
+    const filtered = allCommerces.filter(c => c.category === category);
     if (filtered.length === 0) {
       commerceListEl.textContent = 'Nenhum comércio nesta categoria.';
       return;
     }
     filtered.forEach(commerce => {
+      const link = document.createElement('a');
+      link.href = `index2.html?commerce=${encodeURIComponent(commerce.name)}`;
+
       const card = document.createElement('div');
       card.className = 'commerce-card';
       card.innerHTML = `
-        <img src="${commerce.logoUrl}" alt="${commerce.name}" />
+        <img src="${commerce.logoUrl}" alt="${commerce.name}" onerror="this.onerror=null;this.src='https://via.placeholder.com/150?text=Logo'"/>
         <h3>${commerce.name}</h3>
       `;
-      card.addEventListener('click', () => {
-        // Redireciona para index2.html com parâmetro do comércio
-        window.location.href = `index2.html?commerce=${encodeURIComponent(commerce.name)}`;
-      });
-      commerceListEl.appendChild(card);
+
+      link.appendChild(card);
+      commerceListEl.appendChild(link);
     });
   }
 
-  renderCategories();
+  // Initial load
+  async function initializeApp() {
+    categoryListEl.innerHTML = '<li class="loading">Carregando...</li>';
+    commerceListEl.textContent = 'Carregando...';
+    try {
+      await Promise.all([loadCategories(), loadCommerces()]);
+      renderCategories();
+      // The first renderCommercesByCategory is called inside renderCategories
+    } catch (error) {
+      console.error("Falha ao inicializar o aplicativo:", error);
+      categoryListEl.innerHTML = '<li class="loading">Falha ao carregar.</li>';
+      commerceListEl.textContent = 'Não foi possível carregar os dados. Por favor, tente novamente mais tarde.';
+    }
+  }
+
+  initializeApp();
 </script>
 </body>
 </html>
