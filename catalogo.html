@@ -250,11 +250,23 @@
   // Monitorar estado de autenticação
   onAuthStateChanged(auth, user => {
     if (user) {
-      currentUser = user;
-      loginContainer.style.display = 'none';
-      catalogPanel.style.display = 'block';
-      populateCommerceSelect();
-      renderProducts();
+      // Verify if the user is a registered merchant
+      const commercesCol = collection(db, "commerces");
+      const q = query(commercesCol, where("email", "==", user.email));
+      getDocs(q).then(querySnapshot => {
+        if (!querySnapshot.empty) {
+          // User is authorized
+          currentUser = user;
+          loginContainer.style.display = 'none';
+          catalogPanel.style.display = 'block';
+          populateCommerceSelect();
+          renderProducts();
+        } else {
+          // User is not a registered merchant
+          alert('Acesso negado. Você não está cadastrado como comerciante.');
+          signOut(auth); // This will trigger the 'else' block below
+        }
+      });
     } else {
       currentUser = null;
       loginContainer.style.display = 'block';
@@ -263,9 +275,6 @@
   });
 
   // Inicialização
-  loginContainer.style.display = 'block';
-  catalogPanel.style.display = 'none';
-
   const loginButton = document.getElementById('google-login-btn');
   loginButton.addEventListener('click', login);
 </script>

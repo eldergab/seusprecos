@@ -229,10 +229,14 @@
     try {
       const categoriesCol = collection(db, "categories");
       const categorySnapshot = await getDocs(categoriesCol);
-      const existingCategories = categorySnapshot.docs.map(doc => doc.data().name);
+      const existingCategories = categorySnapshot.docs.map(doc => doc.data().name.toLowerCase());
+      const defaultCategories = [
+        "Bares", "Restaurantes", "Lanchonetes", "Padarias", "Pizzarias", "Sorveterias",
+        "Supermercados", "Diversão", "Lazer", "Entretenimento", "Fast Food", "Comida Rápida"
+      ];
       for (const cat of defaultCategories) {
-        if (!existingCategories.includes(cat)) {
-          await addDoc(categoriesCol, { name: cat });
+        if (!existingCategories.includes(cat.toLowerCase())) {
+          await addDoc(categoriesCol, { name: cat, userId: currentUser.uid });
         }
       }
     } catch (error) {
@@ -395,21 +399,27 @@
 
   // Monitor auth state
   onAuthStateChanged(auth, user => {
-    if (user) {
-      if (user.email === 'eldergab@gmail.com') {
+    if (user) { // User is signed in
+      // Check if the user is an admin
+      const adminsCol = collection(db, "admins");
+      const q = query(adminsCol, where("uid", "==", user.uid));
+      getDocs(q).then(adminSnapshot => {
+        if (!adminSnapshot.empty) { // User is an admin
         currentUser = user;
         loginContainer.style.display = 'none';
         adminPanel.style.display = 'block';
         renderCategories();
         renderCommerces();
-      } else {
-        alert('Acesso negado: usuário não autorizado.');
+        } else { // User is not an admin
+          alert('Acesso negado: usuário não autorizado.');
+          signOut(auth);
+        }
+      }).catch(error => {
+        console.error("Error checking admin status:", error);
+        alert("Falha ao verificar permissões de administrador.");
         signOut(auth);
-        currentUser = null;
-        loginContainer.style.display = 'block';
-        adminPanel.style.display = 'none';
-      }
-    } else {
+      });
+    } else { // User is signed out
       currentUser = null;
       loginContainer.style.display = 'block';
       adminPanel.style.display = 'none';
