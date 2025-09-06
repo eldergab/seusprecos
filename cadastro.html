@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cadastro de Empresa - Sistema de Cardápio</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #222;
+    color: #eee;
+    margin: 0;
+    padding: 20px;
+  }
+  h1, h2 {
+    color: #ffa500;
+  }
+  label {
+    display: block;
+    margin-top: 10px;
+  }
+  input, select, button, textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border-radius: 6px;
+    border: none;
+    font-size: 1rem;
+  }
+  button {
+    background: #ffa500;
+    color: #222;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+  }
+  button:hover {
+    background: #e59400;
+  }
+  .list-section {
+    margin-top: 30px;
+  }
+  .list-item {
+    background: #444;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+  <h1>Cadastro de Empresa</h1>
+  <form id="business-registration-form">
+    <label for="business-name">Nome Fantasia:</label>
+    <input type="text" id="business-name" required placeholder="Ex: Churrasquinho do Funalo" />
+
+    <label for="business-description">Descrição da sua atividade:</label>
+    <textarea id="business-description" required placeholder="O que a empresa vende"></textarea>
+
+    <label for="business-address">Endereço:</label>
+    <input type="text" id="business-address" required />
+
+    <label for="business-phone">Telefone:</label>
+    <input type="text" id="business-phone" required />
+
+    <label for="business-email">Email:</label>
+    <input type="email" id="business-email" required />
+
+    <label for="business-email-confirm">Confirmação do Email:</label>
+    <input type="email" id="business-email-confirm" required />
+
+    <label for="business-cnpj-cpf">CNPJ ou CPF:</label>
+    <input type="text" id="business-cnpj-cpf" required />
+
+    <label for="business-hours">Horário de Atendimento:</label>
+    <input type="text" id="business-hours" required />
+
+    <label for="business-delivery">
+      <input type="checkbox" id="business-delivery" />
+      Faz entrega?
+    </label>
+
+    <button type="submit">Cadastrar Empresa</button>
+  </form>
+
+  <div class="list-section" id="business-list"></div>
+
+<script type="module">
+  import { db } from './firebase-config.js';
+  import { collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+  const businessForm = document.getElementById('business-registration-form');
+  const businessListDiv = document.getElementById('business-list');
+  const businessNameInput = document.getElementById('business-name');
+  const businessDescriptionInput = document.getElementById('business-description');
+  const businessAddressInput = document.getElementById('business-address');
+  const businessPhoneInput = document.getElementById('business-phone');
+  const businessEmailInput = document.getElementById('business-email');
+  const businessEmailConfirmInput = document.getElementById('business-email-confirm');
+  const businessCnpjCpfInput = document.getElementById('business-cnpj-cpf');
+  const businessHoursInput = document.getElementById('business-hours');
+  const businessDeliveryCheckbox = document.getElementById('business-delivery');
+
+  // Função para carregar empresas do Firestore
+  async function loadBusinesses() {
+    const businessesCol = collection(db, "businesses");
+    const businessSnapshot = await getDocs(businessesCol);
+    return businessSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  // Função para salvar empresa no Firestore
+  async function saveBusiness(business) {
+    const businessesCol = collection(db, "businesses");
+    await addDoc(businessesCol, business);
+  }
+
+  // Função para excluir empresa do Firestore
+  async function deleteBusiness(id) {
+    await deleteDoc(doc(db, "businesses", id));
+  }
+
+  // Renderiza lista de empresas cadastradas
+  async function renderBusinesses() {
+    const businesses = await loadBusinesses();
+    businessListDiv.innerHTML = '';
+
+    businesses.forEach(business => {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+
+      const infoDiv = document.createElement('div');
+      infoDiv.innerHTML = `<strong>${business.name}</strong><br/>Descrição: ${business.description}<br/>Endereço: ${business.address}<br/>Telefone: ${business.phone}<br/>Email: ${business.email}<br/>CNPJ/CPF: ${business.cnpjCpf}<br/>Horário: ${business.hours}<br/>Faz entrega: ${business.delivery ? 'Sim' : 'Não'}`;
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Excluir';
+      delBtn.onclick = async () => {
+        if (confirm(`Excluir empresa "${business.name}"?`)) {
+          await deleteBusiness(business.id);
+          await renderBusinesses();
+        }
+      };
+
+      div.appendChild(infoDiv);
+      div.appendChild(delBtn);
+      businessListDiv.appendChild(div);
+    });
+  }
+
+  businessForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = businessNameInput.value.trim();
+    const description = businessDescriptionInput.value.trim();
+    const address = businessAddressInput.value.trim();
+    const phone = businessPhoneInput.value.trim();
+    const email = businessEmailInput.value.trim();
+    const emailConfirm = businessEmailConfirmInput.value.trim();
+    const cnpjCpf = businessCnpjCpfInput.value.trim();
+    const hours = businessHoursInput.value.trim();
+    const delivery = businessDeliveryCheckbox.checked;
+
+    if (!name || !description || !address || !phone || !email || !emailConfirm || !cnpjCpf || !hours) {
+      alert('Por favor, preencha todos os campos.');
+      return;
+    }
+
+    if (email !== emailConfirm) {
+      alert('Os emails não coincidem.');
+      return;
+    }
+
+    await saveBusiness({ name, description, address, phone, email, cnpjCpf, hours, delivery });
+    await renderBusinesses();
+    businessForm.reset();
+  });
+
+  // Inicializa a lista ao carregar a página
+  renderBusinesses();
+</script>
+</body>
+</html>
