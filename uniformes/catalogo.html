@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catálogo de Produtos</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f9f9f9;
+            color: #333;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        header, footer {
+            background-color: #222;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        header img.logo {
+            max-height: 60px;
+            width: auto;
+        }
+        main {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .printing-types {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+            font-weight: bold;
+            text-align: center;
+        }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
+            gap: 20px;
+        }
+        .product-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 6px rgba(0,0,0,0.1);
+            padding: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .product-card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .product-name {
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        .product-info {
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        .whatsapp-link {
+            background-color: #25D366;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            transition: background-color 0.3s ease;
+        }
+        .whatsapp-link:hover {
+            background-color: #1ebe57;
+        }
+        footer a {
+            color: #25D366;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .products-grid {
+                grid-template-columns: repeat(auto-fill,minmax(140px,1fr));
+                gap: 15px;
+            }
+            header img.logo {
+                max-height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="agenda/index.php" style="display: inline-block;">
+            <img src="logo/Sem título-1.png" alt="Logo" class="logo" />
+        </a>
+    </header>
+    <main>
+        <h1>Catálogo de Produtos</h1>
+        <div class="printing-types">
+            Tipos de impressão disponíveis: DTF, Silk, Sublimação, Bordado e filme de impressão.
+        </div>
+        <div class="products-grid">
+            <!-- Product cards inserted here -->
+            <div class="product-card">
+                <img src="produtos/Brindes em Geral.jpeg" alt="Brindes em Geral" />
+                <div class="product-name">Brindes em Geral</div>
+                <a class="whatsapp-link" href="https://wa.me/5562920026981?text=Olá,%20tenho%20interesse%20no%20produto%20Brindes%20em%20Geral" target="_blank" rel="noopener noreferrer">Tenho interesse</a>
+            </div>
+            <div class="product-card">
+                <img src="produtos/Calça Jeans Tradiciona.jpeg" alt="Calça Jeans Tradiciona" />
+                <div class="product-name">Calça Jeans Tradiciona</div>
+                <a class="whatsapp-link" href="https://wa.me/5562920026981?text=Olá,%20tenho%20interesse%20no%20produto%20Calça%20Jeans%20Tradiciona" target="_blank" rel="noopener noreferrer">Tenho interesse</a>
+            </div>
+            <div class="product-card">
+                <img src="produtos/Camisa social.jpeg" alt="Camisa social" />
+                <div class="product-name">Camisa social</div>
+                <a class="whatsapp-link" href="https://wa.me/5562920026981?text=Olá,%20tenho%20interesse%20no%20produto%20Camisa%20social" target="_blank" rel="noopener noreferrer">Tenho interesse</a>
+            </div>
+            <div class="product-card">
+                <img src="produtos/Camiseta baby look.jpeg" alt="Camiseta baby look" />
+                <div class="product-name">Camiseta baby look</div>
+                <a class="whatsapp-link" href="https://wa.me/5562920026981?text=Olá,%20tenho%20interesse%20no%20produto%20Camiseta%20baby%20look" target="_blank" rel="noopener noreferrer">Tenho interesse</a>
+            </div>
+            <div class="product-card">
+                <img src="produtos/Caneca de porcelana.jpeg" alt="Caneca de porcelana" />
+                <div class="product-name">Caneca de porcelana</div>
+                <a class="whatsapp-link" href="https://wa.me/5562920026981?text=Olá,%20tenho%20interesse%20no%20produto%20Caneca%20de%20porcelana" target="_blank" rel="noopener noreferrer">Tenho interesse</a>
+            </div>
+            <div class="product-card">
+                <img src="produtos/Chinelo tradicional.jpeg" alt="Chinelo tradicional" />
+                <div class="product-name">Chinelo tradicional</div>
+                <a class="whatsapp-link" href="https://wa.me/5562920026981?text=Olá,%20tenho%20interesse%20no%20produto%20Chinelo%20tradicional" target="_blank" rel="noopener noreferrer">Tenho interesse</a>
+            </div>
+            <div class="product-card">
+                <img src="produtos/Cmiseta malha PP ou PV.jpeg" alt="Cmiseta malha PP ou PV" />
+                <div class="product-name">Cmiseta malha PP ou PV</div>
+                <a class="whatsapp-link" href="https://wa.me/5562920026981?text=Olá,%20tenho%20interesse%20no%20produto%20Cmiseta%20malha%20PP%20ou%20PV" target="_blank" rel="noopener noreferrer">Tenho interesse</a>
+            </div>
+            <div class="product-card">
+                <img src="produtos/Jaleco Oxiford.jpeg" alt="Jaleco Oxiford" />
+                <div class="product-name">Jaleco Oxiford</div>
+                <a class="whatsapp-link" href="https://wa.me/5562920026981?text=Olá,%20tenho%20interesse%20no%20produto%20Jaleco%20Oxiford" target="_blank" rel="noopener noreferrer">Tenho interesse</a>
+            </div>
+            <div class="product-card">
+                <img src="produtos/Jaleco socia.jpeg" alt="Jaleco socia" />
+                <div class="product-name">Jaleco socia</div>
+                <a class="whatsapp-link" href="https://wa.me/5562920026981?text=Olá,%20tenho%20interesse%20no%20produto%20Jaleco%20socia" target="_blank" rel="noopener noreferrer">Tenho interesse</a>
+            </div>
+            <div class="product-card">
+                <img src="produtos/Jaleco Tradicional de Brim ou Jeans.jpeg" alt="Jaleco Tradicional de Brim ou Jeans" />
+                <div class="product-name">Jaleco Tradicional de Brim ou Jeans</div>
+                <a class="whatsapp-link" href="https://wa.me/5562920026981?text=Olá,%20tenho%20interesse%20no%20produto%20Jaleco%20Tradicional%20de%20Brim%20ou%20Jeans" target="_blank" rel="noopener noreferrer">Tenho interesse</a>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <a href="https://wa.me/5562920026981" target="_blank" rel="noopener noreferrer">Fale Conosco</a>
+    </footer>
+</body>
+</html>
