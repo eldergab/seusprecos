@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enviar Mensagem WhatsApp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 350px;
+        }
+        h2 { color: #25d366; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            background-color: #25d366;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #128c7e;
+        }
+        p { font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>WhatsApp Direto</h2>
+    <p>Digite o número com DDD (ex: 11999999999)</p>
+    
+    <input type="text" id="phone" placeholder="DDD + Número" required>
+    <button onclick="enviarMensagem()">Abrir no WhatsApp</button>
+    
+    <p>O link abrirá em uma nova aba.</p>
+</div>
+
+<script>
+    function enviarMensagem() {
+        // Pega o valor do input
+        let num = document.getElementById('phone').value;
+        
+        // Remove tudo que não for número (espaços, traços, parênteses)
+        num = num.replace(/\D/g, '');
+        
+        if (num.length >= 10) {
+            // Se o usuário não digitou o código do país (55), o script adiciona automaticamente
+            if (num.length === 10 || num.length === 11) {
+                num = '55' + num;
+            }
+            
+            // Monta a URL e abre em nova aba
+            const url = `https://web.whatsapp.com/send?phone=${num}`;
+            window.open(url, '_blank');
+        } else {
+            alert("Por favor, digite o número completo com DDD.");
+        }
+    }
+</script>
+
+</body>
+</html>
